@@ -14,8 +14,6 @@ import MyChats from "./pages/MyChats";
 
 function AppContent() {
   const location = useLocation();
-
-  // Hide Navbar on Chat pages
   const hideNavbar =
     location.pathname.startsWith("/chat");
 

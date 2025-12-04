@@ -6,8 +6,6 @@ const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const MongoStore = require("connect-mongo").default;
 const session = require("express-session");
-
-// NOTE: Assuming these files and models exist in your project structure
 const auth_routes = require("./routes/auth_routes");
 const mentor_routes = require("./routes/mentor_routes");
 
@@ -62,7 +60,7 @@ app.get("/", (req, res) => {
 });
 
 /* ------------------------------------------------------
-      ✅ CREATE or RETURN EXISTING CONVERSATION
+       CREATE or RETURN EXISTING CONVERSATION
 ------------------------------------------------------ */
 app.post("/api/conversation", async (req, res) => {
   const { senderId, receiverId } = req.body;
@@ -86,7 +84,7 @@ app.post("/api/conversation", async (req, res) => {
 });
 
 /* ------------------------------------------------------
-      ✅ ADD conversation to BOTH USER PROFILES
+       ADD conversation to BOTH USER PROFILES
 ------------------------------------------------------ */
 app.post("/api/chat/addToUsers", async (req, res) => {
   const { conversationId, userId, mentorId } = req.body;
@@ -108,7 +106,7 @@ app.post("/api/chat/addToUsers", async (req, res) => {
 });
 
 /* ------------------------------------------------------
-      ✅ GET ALL CHATS FOR A USER
+       GET ALL CHATS FOR A USER
 ------------------------------------------------------ */
 app.get("/api/chat/mychats/:userId", async (req, res) => {
   try {
@@ -126,7 +124,7 @@ app.get("/api/chat/mychats/:userId", async (req, res) => {
 });
 
 /* ------------------------------------------------------
-      ✅ GET MESSAGES FOR A CONVERSATION
+       GET MESSAGES FOR A CONVERSATION
 ------------------------------------------------------ */
 app.get("/api/chat/messages/:conversationId", async (req, res) => {
   try {
@@ -154,23 +152,23 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
-  // ✅ Client sends 'join chat' with the conversationId
+  //  Client sends 'join chat' with the conversationId
   socket.on("join chat", (conversationId) => {
     socket.join(conversationId);
     console.log(`User joined room: ${conversationId}`);
   });
 
-  // ✅ Client sends 'new message' with the payload
+  //  Client sends 'new message' with the payload
   socket.on("new message", async (payload) => {
     try {
-      // Client payload structure: { conversationId, senderId, message: { content: string } }
+      
       const { conversationId, senderId, message } = payload;
 
       // 1. Create a new Message document in the DB
       const newMessage = await Message.create({
         conversationId,
         sender: senderId,
-        message: message.content, // Use the content field from the client payload
+        message: message.content, 
       });
 
       // 2. Update the Conversation's lastMessage
@@ -185,12 +183,12 @@ io.on("connection", (socket) => {
       );
 
       // 4. Emit the populated message to all clients in the conversation room
-      // Client will listen for 'message received'
+     
       io.to(conversationId).emit("message received", populated);
 
     } catch (err) {
       console.error("Socket Send Message Error:", err);
-      // Optional: Add logic to send an error back to the sender
+      
     }
   });
 

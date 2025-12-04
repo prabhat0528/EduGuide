@@ -11,11 +11,11 @@ export default function ChatPage() {
   const { id: conversationId } = useParams();
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
-  const [otherUser, setOtherUser] = useState(null); // State to hold the other participant's details
+  const [otherUser, setOtherUser] = useState(null); 
   const [text, setText] = useState("");
   const bottomRef = useRef();
 
-  // --- Fetch Conversation Details (To get other user's name/picture for the header) ---
+  // --- Fetch Conversation Details 
   const fetchConversationDetails = async () => {
     if (!user || !conversationId) return;
     try {
@@ -103,7 +103,7 @@ export default function ChatPage() {
 
   return (
     <div className=" min-h-screen bg-[#0A0F1F] text-white flex flex-col">
-      {/* 🚀 Aesthetic Header */}
+      {/*  Header */}
       <div className="p-4 md:p-5 bg-[#111827] shadow-xl sticky top-0 z-10 border-b border-gray-700/50 flex items-center gap-3">
         <img
           src={otherUser?.profile_picture || "default-avatar.png"}
@@ -120,7 +120,7 @@ export default function ChatPage() {
         )}
       </div>
 
-      {/* 💬 Chat Messages Container (Responsive Padding) */}
+      {/*  Chat Messages Container */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
         {messages.map((msg) => {
           const mine = msg.sender?._id === user?._id || msg.sender === user?._id;
@@ -136,7 +136,7 @@ export default function ChatPage() {
               <div
                 className={`flex max-w-[90%] sm:max-w-md ${mine ? "flex-row-reverse" : "flex-row"} items-end gap-2`}
               >
-                {/* Avatar for the other user */}
+               
                 {!mine && (
                   <img
                     src={senderPic}
@@ -145,11 +145,11 @@ export default function ChatPage() {
                   />
                 )}
                 
-                {/* 🎨 Improved Message Bubble */}
+               
                 <div
                   className={`p-3 text-base shadow-lg transition-all duration-200 ease-in-out ${
                     mine
-                      ? "bg-blue-600 text-white rounded-t-xl rounded-l-xl" // Rounded corners adjusted for aesthetic
+                      ? "bg-blue-600 text-white rounded-t-xl rounded-l-xl" 
                       : "bg-gray-800 text-gray-200 rounded-t-xl rounded-r-xl"
                   }`}
                 >
@@ -157,7 +157,7 @@ export default function ChatPage() {
                     {senderName}
                   </p>
                   {messageContent}
-                  {/* Optional: Add a subtle timestamp */}
+                 
                   <span className={`block text-xs mt-1 ${mine ? 'text-blue-200' : 'text-gray-400'} opacity-70 text-right`}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
@@ -170,7 +170,7 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* ⌨️ Input Area (Fixed position, refined style) */}
+      {/*  Input Area  */}
       <div className="p-4 bg-[#111827] flex items-center gap-3 sticky bottom-0 z-10 border-t border-gray-700/50">
         <input
           className="flex-1 p-3 bg-gray-700 text-white rounded-xl outline-none border border-transparent focus:border-blue-500 transition duration-200 placeholder-gray-400 text-base"
@@ -181,7 +181,7 @@ export default function ChatPage() {
         />
         <button
           onClick={sendMessage}
-          disabled={!text.trim()} // Disable if empty
+          disabled={!text.trim()} 
           className="bg-blue-600 px-4 py-3 rounded-xl font-medium text-white hover:bg-blue-700 transition duration-200 disabled:bg-blue-900 disabled:opacity-50"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">

@@ -1,48 +1,18 @@
 const mongoose = require("mongoose");
 
-const UserSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  password: String,
+  role: String,
+  profile_picture: String,
 
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
+  mychats: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Conversation",
     },
+  ],
+});
 
-    password: {
-      type: String,
-      required: true,
-    },
-
-    role: {
-      type: String,
-      enum: ["Student", "Mentor"],
-      required: true,
-    },
-
-    description: {
-      type: String,
-      required: true,
-    },
-
-    social_url: {
-      type: String,
-      default: "",
-    },
-
-    profile_picture: {
-      type: String, 
-      default: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwTjn7ADTGtefL4Im3WluJ6ersByvJf8k7-Q&s",
-    },
-  },
-  { timestamps: true }
-);
-
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model("User", userSchema);

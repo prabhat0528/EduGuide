@@ -10,10 +10,10 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
+
   const handleLogout = async () => {
     await logout();
-    navigate("/")
-
+    navigate("/");
   };
 
   return (
@@ -40,36 +40,39 @@ export default function Navbar() {
 
         {/* NAV LINKS (Desktop) */}
         <div className="hidden md:flex items-center gap-6">
-          {["About"].map((item) => (
-            <NavItem key={item} label={item} path={`/${item.toLowerCase()}`} />
-          ))}
+
+          {/* Regular Links */}
+          <NavItem label="About" path="/about" />
+
+          {/* My Chats Link */}
+          <NavItem label="My Chats" path="/chats" />
 
           {/* If user is logged in */}
           {user ? (
-              <div className="flex items-center gap-4">
-                <Link to="/profile">
-                  <img
-                    src={user.profile_picture || "https://via.placeholder.com/40"}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full object-cover border-2 border-blue-500 cursor-pointer"
-                  />
-                </Link>
-
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/auth"
-                className="px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition"
-              >
-                Get Started
+            <div className="flex items-center gap-4">
+              <Link to="/profile">
+                <img
+                  src={user.profile_picture || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwTjn7ADTGtefL4Im3WluJ6ersByvJf8k7-Q&s"}
+                  alt="Profile"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-blue-500 cursor-pointer"
+                />
               </Link>
-            )}
+
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/auth"
+              className="px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition"
+            >
+              Get Started
+            </Link>
+          )}
         </div>
 
         {/* Hamburger menu (Mobile) */}
@@ -91,16 +94,22 @@ export default function Navbar() {
           transition={{ duration: 0.3 }}
           className="md:hidden bg-[#0A0F1F]/95 backdrop-blur-2xl p-4 flex flex-col gap-4"
         >
-          {["Features", "About"].map((item) => (
-            <Link
-              key={item}
-              to={`/${item.toLowerCase()}`}
-              className="text-gray-200 text-lg hover:text-blue-400 transition"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {item}
-            </Link>
-          ))}
+          {/* Mobile menu links */}
+          <Link
+            to="/about"
+            className="text-gray-200 text-lg hover:text-blue-400 transition"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            About
+          </Link>
+
+          <Link
+            to="/chats"
+            className="text-gray-200 text-lg hover:text-blue-400 transition"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            My Chats
+          </Link>
 
           {user ? (
             <div className="flex flex-col gap-2 items-center">

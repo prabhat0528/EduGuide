@@ -1,17 +1,20 @@
-"use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/Authcontext"; // Needed for current user ID
+
+const BASE_URL = "http://localhost:9000";
 
 export default function MentorProfile() {
-  const { id } = useParams();
-  const [mentor, setMentor] = useState(null);
+  const { id: mentorId } = useParams(); // Rename to mentorId for clarity
+  const { user } = useAuth(); // Get current user
   const navigate = useNavigate();
+  const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchMentor = async () => {
     try {
-      const res = await axios.get(`http://localhost:9000/api/mentors/${id}`);
+      const res = await axios.get(`${BASE_URL}/api/mentors/${mentorId}`);
       setMentor(res.data.mentor);
     } catch (err) {
       console.error(err);
@@ -24,16 +27,47 @@ export default function MentorProfile() {
     fetchMentor();
   }, []);
 
+  const handleStartChat = async () => {
+    if (!user || !mentor) return;
+
+    try {
+      // 1. Create or get existing conversation
+      const conversationRes = await axios.post(
+        `${BASE_URL}/api/conversation`,
+        {
+          senderId: user._id,
+          receiverId: mentorId,
+        }
+      );
+
+      const conversation = conversationRes.data;
+
+      // 2. Add conversation ID to both user profiles
+      await axios.post(`${BASE_URL}/api/chat/addToUsers`, {
+        conversationId: conversation._id,
+        userId: user._id,
+        mentorId: mentorId,
+      });
+
+      // 3. Navigate to the ChatPage using the Conversation ID
+      navigate(`/chat/${conversation._id}`);
+    } catch (err) {
+      console.error("Error starting chat:", err);
+      alert("Failed to start chat.");
+    }
+  };
+
   if (loading)
     return <div className="text-center mt-20 text-white">Loading...</div>;
 
   if (!mentor)
-    return <div className="text-center mt-20 text-red-500">Mentor not found</div>;
+    return (
+      <div className="text-center mt-20 text-red-500">Mentor not found</div>
+    );
 
   return (
     <div className="min-h-screen bg-[#0A0F1F] text-white pt-20 px-6">
       <div className="max-w-3xl mx-auto bg-[#111827] p-8 rounded-xl border border-white/10">
-
         <img
           src={mentor.profile_picture}
           className="w-40 h-40 rounded-full mx-auto border-4 border-blue-500 object-cover"
@@ -55,7 +89,7 @@ export default function MentorProfile() {
         )}
 
         <button
-          onClick={() => navigate(`/chat/${mentor._id}`)}
+          onClick={handleStartChat} // Updated to use the new function
           className="w-full mt-6 bg-blue-600 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
         >
           Start Chat

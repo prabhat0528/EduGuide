@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
-        setUser,     // <-- expose setUser so components can update the context directly
+        setUser,    
         loading,
         signup,
         login,

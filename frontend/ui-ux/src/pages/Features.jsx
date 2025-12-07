@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { FaRobot, FaComments, FaGraduationCap, FaMapMarkedAlt, FaRobot as FaChatbot } from "react-icons/fa";
 
 const features = [
@@ -7,29 +8,30 @@ const features = [
     description: "Prepare with AI-generated interview questions and get real-time feedback.",
     href: "https://interviewmateai.onrender.com/",
     icon: <FaRobot className="text-4xl text-blue-500 mb-4" />,
+    external: true, // mark as external link
   },
   {
     title: "Chat with Experts",
     description: "Connect with industry professionals for guidance and mentoring.",
-    href:"/mentors",
+    href: "/mentors",
     icon: <FaComments className="text-4xl text-purple-500 mb-4" />,
   },
   {
     title: "Get Coursera Course Recommendations",
     description: "Get course recommendations based on topic, difficulty level to level up your knowledge and gain valuable certificates",
-     href:"/recommender",
+    href: "/recommender",
     icon: <FaGraduationCap className="text-4xl text-green-500 mb-4" />,
   },
   {
     title: "Personalized Roadmap",
     description: "Create a tailored learning and career roadmap just for you.",
-     href:"/",
+    href: "/",
     icon: <FaMapMarkedAlt className="text-4xl text-yellow-500 mb-4" />,
   },
   {
     title: "Smart Chatbot",
     description: "Get instant answers to your queries with an intelligent chatbot.",
-     href:"/",
+    href: "/",
     icon: <FaChatbot className="text-4xl text-pink-500 mb-4" />,
   },
 ];
@@ -43,22 +45,28 @@ export default function Features() {
         </h2>
 
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature, idx) => (
-            <a
-              href={feature.href}
-              key={idx}
-              className="group cursor-pointer p-8 bg-gray-800 rounded-3xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 hover:bg-gray-700 transition-all duration-500 flex flex-col items-center text-center"
-            >
-              <div className="mb-4">{feature.icon}</div>
-              <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-blue-400 transition-colors">
-                {feature.title}
-              </h3>
-              <p className="text-gray-300">{feature.description}</p>
+          {features.map((feature, idx) => {
+            // If external link, use <a>, else use <Link>
+            const Wrapper = feature.external ? "a" : Link;
+            const props = feature.external
+              ? { href: feature.href, target: "_blank", rel: "noopener noreferrer" }
+              : { to: feature.href };
 
-              {/* Animated underline */}
-              <span className="block h-[3px] w-0 bg-gradient-to-r from-blue-400 to-purple-400 mt-6 group-hover:w-16 mx-auto transition-all duration-300 rounded-full"></span>
-            </a>
-          ))}
+            return (
+              <Wrapper
+                key={idx}
+                {...props}
+                className="group cursor-pointer p-8 bg-gray-800 rounded-3xl shadow-xl hover:shadow-2xl transform hover:-translate-y-2 hover:bg-gray-700 transition-all duration-500 flex flex-col items-center text-center"
+              >
+                <div className="mb-4">{feature.icon}</div>
+                <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-blue-400 transition-colors">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-300">{feature.description}</p>
+                <span className="block h-[3px] w-0 bg-gradient-to-r from-blue-400 to-purple-400 mt-6 group-hover:w-16 mx-auto transition-all duration-300 rounded-full"></span>
+              </Wrapper>
+            );
+          })}
         </div>
       </div>
     </section>

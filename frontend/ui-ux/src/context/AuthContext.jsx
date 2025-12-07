@@ -1,4 +1,4 @@
-// src/context/Authcontext.jsx
+// src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 
@@ -35,7 +35,6 @@ export const AuthProvider = ({ children }) => {
       headers: { "Content-Type": "multipart/form-data" },
     });
     setUser(res.data.user);
-
     return res.data;
   };
 
@@ -43,7 +42,6 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const res = await axios.post("/api/auth/login", { email, password });
     setUser(res.data.user);
-
     return res.data;
   };
 
@@ -57,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
-        setUser,    
+        setUser,
         loading,
         signup,
         login,

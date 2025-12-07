@@ -11,7 +11,7 @@ export default function MentorList() {
 
   const fetchMentors = async () => {
     try {
-      const res = await axios.get("http://localhost:9000/api/mentors/getmentors");
+      const res = await axios.get("https://eduguide-backend-z81h.onrender.com/api/mentors/getmentors");
       setMentors(res.data.mentors);
     } catch (err) {
       console.error(err);

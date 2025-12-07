@@ -4,7 +4,7 @@ import axios from "axios";
 import io from "socket.io-client";
 import { useAuth } from "../context/Authcontext";
 
-const BASE_URL = "http://localhost:9000";
+const BASE_URL = "https://eduguide-backend-z81h.onrender.com";
 const socket = io(BASE_URL, { transports: ["websocket"] });
 
 export default function ChatPage() {

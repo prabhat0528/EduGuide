@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 
 // Backend base URL
-axios.defaults.baseURL = "http://localhost:9000";
+axios.defaults.baseURL = "https://eduguide-backend-z81h.onrender.com";
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext();

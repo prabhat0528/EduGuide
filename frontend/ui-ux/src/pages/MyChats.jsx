@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAuth } from "../context/Authcontext";
 import { Link } from "react-router-dom";
 
-const BASE_URL = "http://localhost:9000";
+const BASE_URL = "https://eduguide-backend-z81h.onrender.com";
 
 export default function MyChats() {
   const { user } = useAuth();

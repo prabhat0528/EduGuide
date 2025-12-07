@@ -3,7 +3,7 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/Authcontext"; // Needed for current user ID
 
-const BASE_URL = "http://localhost:9000";
+const BASE_URL = "https://eduguide-backend-z81h.onrender.com";
 
 export default function MentorProfile() {
   const { id: mentorId } = useParams(); // Rename to mentorId for clarity

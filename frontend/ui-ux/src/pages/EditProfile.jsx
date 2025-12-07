@@ -66,7 +66,7 @@ export default function EditProfile() {
       );
       if (profilePic) form.append("profile_picture", profilePic);
 
-      const res = await fetch("http://localhost:9000/api/auth/update-profile", {
+      const res = await fetch("https://eduguide-backend-z81h.onrender.com/api/auth/update-profile", {
         method: "PUT",
         credentials: "include",
         body: form,

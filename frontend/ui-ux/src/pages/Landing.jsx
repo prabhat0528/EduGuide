@@ -17,7 +17,7 @@ export default function Landing() {
 
   // Function to fetch quote
   const fetchQuote = () => {
-    fetch("http://localhost:5000/get-motivation")
+    fetch("https://eduguide-genai.onrender.com/get-motivation")
       .then((res) => res.json())
       .then((data) => {
         if (data.quote) setQuote(data.quote);

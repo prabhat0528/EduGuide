@@ -14,7 +14,7 @@ CORS(app)
 gemini_key = os.getenv("GEMINI_KEY")
 
 if not gemini_key:
-    raise ValueError("❌ GEMINI_KEY not found in .env file!")
+    raise ValueError(" GEMINI_KEY not found in .env file!")
 
 model = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",

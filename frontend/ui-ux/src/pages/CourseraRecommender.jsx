@@ -17,7 +17,7 @@ export default function CourseRecommender() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:3000/recommend", {
+      const response = await fetch("https://eduguide-python-ml.onrender.com/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic, difficulty }),

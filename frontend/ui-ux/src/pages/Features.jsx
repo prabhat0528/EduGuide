@@ -25,7 +25,7 @@ const features = [
   {
     title: "Personalized Roadmap",
     description: "Create a tailored learning and career roadmap just for you.",
-    href: "/",
+    href: "https://roadmap-generator-xyac.onrender.com",
     icon: <FaMapMarkedAlt className="text-4xl text-yellow-500 mb-4" />,
   },
   // {

@@ -32,13 +32,13 @@ export default function About() {
           {/* Member Cards */}
           {[
             {
-              img: "https://images.unsplash.com/photo-1607746882042-944635dfe10e",
+              img: "https://res.cloudinary.com/duv8kkdeb/image/upload/v1765289380/x5qgbj0qzcwsesgtocjg.png",
               name: "Riya Verma",
               role: "Founder & Vision Architect",
               desc: "Aarav leads the mission of connecting students with powerful mentorship opportunities."
             },
             {
-              img: "https://images.unsplash.com/photo-1599566150163-29194dcaad36",
+              img: "https://res.cloudinary.com/duv8kkdeb/image/upload/v1765289279/twaikzicihkzdsqlv4nm.jpg",
               name: "Yuvraj Singh",
               role: "Mentorship Lead",
               desc: "Riya oversees mentor onboarding and ensures impactful student-mentor interactions."

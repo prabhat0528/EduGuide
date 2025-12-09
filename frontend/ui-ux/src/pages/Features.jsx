@@ -28,12 +28,12 @@ const features = [
     href: "/",
     icon: <FaMapMarkedAlt className="text-4xl text-yellow-500 mb-4" />,
   },
-  {
-    title: "Smart Chatbot",
-    description: "Get instant answers to your queries with an intelligent chatbot.",
-    href: "/",
-    icon: <FaChatbot className="text-4xl text-pink-500 mb-4" />,
-  },
+  // {
+  //   title: "Smart Chatbot",
+  //   description: "Get instant answers to your queries with an intelligent chatbot.",
+  //   href: "/",
+  //   icon: <FaChatbot className="text-4xl text-pink-500 mb-4" />,
+  // },
 ];
 
 export default function Features() {

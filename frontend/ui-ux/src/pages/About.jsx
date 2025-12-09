@@ -33,15 +33,15 @@ export default function About() {
           {[
             {
               img: "https://res.cloudinary.com/duv8kkdeb/image/upload/v1765289380/x5qgbj0qzcwsesgtocjg.png",
-              name: "Riya Verma",
-              role: "Founder & Vision Architect",
-              desc: "Aarav leads the mission of connecting students with powerful mentorship opportunities."
+              name: "Prabhat Rai",
+              role: "Project Manager",
+              desc: "A B.tech CSE 3rd year fellow with expertise in supervised machine learning , GenAi , full stack development. Oversaw project planning, task distribution, timelines, and overall coordination of the EduGuide development process."
             },
             {
               img: "https://res.cloudinary.com/duv8kkdeb/image/upload/v1765289279/twaikzicihkzdsqlv4nm.jpg",
               name: "Yuvraj Singh",
-              role: "Mentorship Lead",
-              desc: "Riya oversees mentor onboarding and ensures impactful student-mentor interactions."
+              role: "Quality Assurance Lead",
+              desc: "A B.tech CSE 3rd year fellow having expertise in full stack development in MERN stack. Responsilbe for handling tech quality and user experrience of EduGuide."
             },
             {
               img: "https://images.unsplash.com/photo-1595152772835-219674b2a8a6",

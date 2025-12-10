@@ -44,10 +44,10 @@ export default function About() {
               desc: "A B.tech CSE 3rd year fellow having expertise in full stack development in MERN stack. Responsilbe for handling tech quality and user experrience of EduGuide."
             },
             {
-              img: "https://images.unsplash.com/photo-1595152772835-219674b2a8a6",
-              name: "Kunal Patel",
+              img: "https://res.cloudinary.com/duv8kkdeb/image/upload/v1765341325/p3fmwwaetpxzkdflvt5g.jpg",
+              name: "Sreyansh Tarwey",
               role: "Tech & Platform Engineer",
-              desc: "Kunal builds, scales, and optimizes the technical foundation of our platform."
+              desc: "A B.tech CSE 3rd year fellow having expertise in full stack development in MERN stack.Sreyansh builds, and optimizes the technical foundation of our platform."
             },
           ].map((person, i) => (
             <div

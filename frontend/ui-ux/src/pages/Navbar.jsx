@@ -41,25 +41,13 @@ export default function Navbar() {
         {/* NAV LINKS (Desktop) */}
         <div className="hidden md:flex items-center gap-6">
 
-          {/* Regular Links */}
           <NavItem label="About" path="/about" />
           <NavItem label="My Chats" path="/chats" />
-
-          {/* Reviews --- Visible only when logged in */}
-          {user && <NavItem label="Reviews" path="/reviews" />}
 
           {/* If user is logged in */}
           {user ? (
             <div className="flex items-center gap-4">
-
-              {/* Review Button */}
-              <Link
-                to="/reviews"
-                className="px-4 py-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition"
-              >
-                Review
-              </Link>
-
+              
               <Link to="/profile">
                 <img
                   src={
@@ -69,6 +57,14 @@ export default function Navbar() {
                   alt="Profile"
                   className="w-10 h-10 rounded-full object-cover border-2 border-blue-500 cursor-pointer"
                 />
+              </Link>
+
+              {/* Review Button AFTER Profile Pic */}
+              <Link
+                to="/reviews"
+                className="px-4 py-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition"
+              >
+                Review
               </Link>
 
               <button
@@ -123,21 +119,16 @@ export default function Navbar() {
             My Chats
           </Link>
 
-          {/* Mobile Reviews */}
-          {user && (
-            <Link
-              to="/reviews"
-              className="text-gray-200 text-lg hover:text-blue-400 transition"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Reviews
-            </Link>
-          )}
-
           {user ? (
             <div className="flex flex-col gap-3 items-center">
 
-              {/* Review Button */}
+              <img
+                src={user.profile_picture || "https://via.placeholder.com/40"}
+                alt="Profile"
+                className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
+              />
+
+              {/* Review Button AFTER Profile Pic */}
               <Link
                 to="/reviews"
                 className="px-6 py-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition w-full text-center"
@@ -145,12 +136,6 @@ export default function Navbar() {
               >
                 Review
               </Link>
-
-              <img
-                src={user.profile_picture || "https://via.placeholder.com/40"}
-                alt="Profile"
-                className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
-              />
 
               <button
                 onClick={handleLogout}

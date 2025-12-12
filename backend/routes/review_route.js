@@ -6,13 +6,13 @@ const router = express.Router();
 /*---------------------- Saving Reviews ---------------------------------*/
 router.post("/create", async (req, res) => {
   try {
-    const { message, created_by,name } = req.body;
+    const { message, created_by, created_by_name } = req.body;
 
     // Validate fields
-    if (!message || !created_by) {
+    if (!message || !created_by || !created_by_name) {
       return res.status(400).json({
         success: false,
-        message: "Message and user ID are required.",
+        message: "Message, user ID, and user name are required.",
       });
     }
 
@@ -20,7 +20,7 @@ router.post("/create", async (req, res) => {
     const review = await Review.create({
       message,
       created_by,
-      name
+      created_by_name
     });
 
     return res.status(201).json({
@@ -39,3 +39,25 @@ router.post("/create", async (req, res) => {
 });
 
 module.exports = router;
+
+
+/*---------------------- Get All Reviews ---------------------------------*/
+router.get("/all", async (req, res) => {
+  try {
+    const reviews = await Review.find()
+      .sort({ createdAt: -1 }); // latest first
+
+    return res.status(200).json({
+      success: true,
+      count: reviews.length,
+      reviews,
+    });
+
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching reviews.",
+    });
+  }
+});

@@ -11,6 +11,10 @@ const reviewSchema = new mongoose.Schema(
       ref: "User",
       required: true
     },
+    created_by_name: {
+      type: String,
+      required: true
+    }
   },
   { timestamps: true }
 );

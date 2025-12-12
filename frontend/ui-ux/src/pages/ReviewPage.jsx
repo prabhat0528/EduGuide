@@ -1,21 +1,22 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { useAuth } from "../context/Authcontext";
+import { useNavigate } from "react-router-dom";
 
 export default function ReviewPage() {
   const client = axios.create({
     baseURL: "https://eduguide-backend-z81h.onrender.com",
     withCredentials: true,
   });
-
+  const navigate = useNavigate();
   const { user } = useAuth();
   const userId = user?._id; 
+  const name = user.name;
   const [review, setReview] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent form refresh
-
+    e.preventDefault(); 
     if (!review.trim()) {
       alert("Review cannot be empty!");
       return;
@@ -27,11 +28,14 @@ export default function ReviewPage() {
       const res = await client.post("/reviews/create", {
         message: review,
         created_by: userId,
+        name:name
       });
 
       alert("Review submitted successfully!");
 
-      setReview(""); // Clear input field
+      setReview(""); 
+      navigate("/");
+      
     } catch (error) {
       console.log(error);
       alert("Failed to submit review.");

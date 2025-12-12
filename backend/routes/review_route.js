@@ -6,7 +6,7 @@ const router = express.Router();
 /*---------------------- Saving Reviews ---------------------------------*/
 router.post("/create", async (req, res) => {
   try {
-    const { message, created_by } = req.body;
+    const { message, created_by,name } = req.body;
 
     // Validate fields
     if (!message || !created_by) {
@@ -20,6 +20,7 @@ router.post("/create", async (req, res) => {
     const review = await Review.create({
       message,
       created_by,
+      name
     });
 
     return res.status(201).json({

@@ -11,6 +11,7 @@ import MentorList from "./pages/MentorList";
 import MentorProfile from "./pages/MentorProfile";
 import ChatPage from "./pages/ChatPage";
 import MyChats from "./pages/MyChats";
+import ReviewPage from "./pages/ReviewPage";
 
 function AppContent() {
   const location = useLocation();
@@ -33,6 +34,7 @@ function AppContent() {
         <Route path="/mentor/:id" element={<MentorProfile />} />
         <Route path="/chat/:id" element={<ChatPage />} />
         <Route path="/chats" element={<MyChats />} />
+        <Route path = "/reviews" element={<ReviewPage/>}/>
       </Routes>
     </>
   );

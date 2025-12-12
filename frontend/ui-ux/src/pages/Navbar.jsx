@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/Authcontext"; 
+import { useAuth } from "../context/Authcontext";
 import { FiMenu, FiX } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
@@ -29,7 +29,7 @@ export default function Navbar() {
       "
     >
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-
+        
         {/* LOGO */}
         <Link
           to="/"
@@ -43,16 +43,29 @@ export default function Navbar() {
 
           {/* Regular Links */}
           <NavItem label="About" path="/about" />
-
-          {/* My Chats Link */}
           <NavItem label="My Chats" path="/chats" />
+
+          {/* Reviews --- Visible only when logged in */}
+          {user && <NavItem label="Reviews" path="/reviews" />}
 
           {/* If user is logged in */}
           {user ? (
             <div className="flex items-center gap-4">
+
+              {/* Review Button */}
+              <Link
+                to="/reviews"
+                className="px-4 py-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition"
+              >
+                Review
+              </Link>
+
               <Link to="/profile">
                 <img
-                  src={user.profile_picture || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwTjn7ADTGtefL4Im3WluJ6ersByvJf8k7-Q&s"}
+                  src={
+                    user.profile_picture ||
+                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwTjn7ADTGtefL4Im3WluJ6ersByvJf8k7-Q&s"
+                  }
                   alt="Profile"
                   className="w-10 h-10 rounded-full object-cover border-2 border-blue-500 cursor-pointer"
                 />
@@ -75,7 +88,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Hamburger menu (Mobile) */}
+        {/* Hamburger (Mobile) */}
         <div className="md:hidden flex items-center">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -94,7 +107,6 @@ export default function Navbar() {
           transition={{ duration: 0.3 }}
           className="md:hidden bg-[#0A0F1F]/95 backdrop-blur-2xl p-4 flex flex-col gap-4"
         >
-          {/* Mobile menu links */}
           <Link
             to="/about"
             className="text-gray-200 text-lg hover:text-blue-400 transition"
@@ -111,16 +123,38 @@ export default function Navbar() {
             My Chats
           </Link>
 
+          {/* Mobile Reviews */}
+          {user && (
+            <Link
+              to="/reviews"
+              className="text-gray-200 text-lg hover:text-blue-400 transition"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Reviews
+            </Link>
+          )}
+
           {user ? (
-            <div className="flex flex-col gap-2 items-center">
+            <div className="flex flex-col gap-3 items-center">
+
+              {/* Review Button */}
+              <Link
+                to="/reviews"
+                className="px-6 py-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition w-full text-center"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Review
+              </Link>
+
               <img
                 src={user.profile_picture || "https://via.placeholder.com/40"}
                 alt="Profile"
                 className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
               />
+
               <button
                 onClick={handleLogout}
-                className="px-6 py-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition"
+                className="px-6 py-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition w-full"
               >
                 Logout
               </button>

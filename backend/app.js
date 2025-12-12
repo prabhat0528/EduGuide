@@ -8,6 +8,7 @@ const MongoStore = require("connect-mongo").default;
 const session = require("express-session");
 const auth_routes = require("./routes/auth_routes");
 const mentor_routes = require("./routes/mentor_routes");
+const review_route = require("./routes/review_route");
 
 const Conversation = require("./models/conversation_schema");
 const Message = require("./models/message_schema");
@@ -47,6 +48,7 @@ app.use(
 /* --------------------- ROUTES --------------------- */
 app.use("/api/auth", auth_routes);
 app.use("/api/mentors", mentor_routes);
+app.use("/reviews",review_route);
 
 /* --------------------- DB --------------------- */
 mongoose

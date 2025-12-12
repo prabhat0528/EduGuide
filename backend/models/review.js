@@ -1,17 +1,18 @@
 const mongoose = require("mongoose");
 
-const Review = mongoose.model({
-    message:{
-        type: String,
-        required: true
+const reviewSchema = new mongoose.Schema(
+  {
+    message: {
+      type: String,
+      required: true,
     },
-    created_by:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
+    created_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
     },
-    
-},{ timestamps: true });
+  },
+  { timestamps: true }
+);
 
-const reviewSchema = mongoose.model("Review",Review);
-
-module.exports = reviewSchema;
+module.exports = mongoose.model("Review", reviewSchema);

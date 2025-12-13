@@ -27,38 +27,57 @@ function ReadReview() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-60">
-        <p className="text-gray-500 text-lg">Loading reviews...</p>
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-[#0A0F1F] via-[#141A33] to-[#1F1147]">
+        <p className="text-gray-300 text-lg animate-pulse">
+          Loading reviews...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-[#0A0F1F] via-[#141A33] to-[#1F1147] px-4 py-14">
+      
+      {/* Heading */}
+      <h2 className="text-4xl font-extrabold text-center mb-12 
+        bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 
+        text-transparent bg-clip-text">
         What Our Users Say 💬
       </h2>
 
       {reviews.length === 0 ? (
-        <p className="text-center text-gray-500">No reviews available.</p>
+        <p className="text-center text-gray-400">No reviews available.</p>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="max-w-7xl mx-auto grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {reviews.map((review) => (
             <div
               key={review._id}
-              className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition duration-300 flex flex-col justify-between"
+              className="
+                relative p-6 rounded-2xl
+                bg-white/10 backdrop-blur-xl
+                border border-white/10
+                shadow-lg
+                hover:shadow-purple-500/30
+                hover:-translate-y-2
+                transition-all duration-300
+                flex flex-col justify-between
+              "
             >
+              {/* Glow Effect */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r 
+                from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-xl -z-10" />
+
               {/* Review Message */}
-              <p className="text-gray-700 text-sm leading-relaxed mb-4">
+              <p className="text-gray-200 text-sm leading-relaxed mb-6">
                 “{review.message}”
               </p>
 
               {/* Footer */}
-              <div className="border-t pt-4 mt-auto">
-                <p className="text-sm font-semibold text-gray-800">
+              <div className="border-t border-white/10 pt-4 mt-auto">
+                <p className="text-sm font-semibold text-white">
                   {review.created_by_name}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-400">
                   {new Date(review.createdAt).toLocaleDateString("en-IN", {
                     day: "2-digit",
                     month: "long",

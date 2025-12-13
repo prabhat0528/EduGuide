@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import { FiMessageSquare } from "react-icons/fi";
 
 function ReadReview() {
   const client = axios.create({
@@ -36,14 +37,21 @@ function ReadReview() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A0F1F] via-[#141A33] to-[#1F1147] px-4 py-14">
-      
-      {/* Heading */}
-      <h2 className="text-4xl font-extrabold text-center mb-12 
-        bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 
-        text-transparent bg-clip-text">
-        What Our Users Say 💬
-      </h2>
+    <div className="min-h-screen bg-gradient-to-br from-[#0A0F1F] via-[#141A33] to-[#1F1147] px-4 pt-32 pb-14">
+
+      {/* Chat Icon Rectangle */}
+      <div className="flex justify-center mb-12">
+        <div
+          className="
+            w-16 h-16 flex items-center justify-center
+            rounded-xl
+            bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500
+            shadow-lg shadow-purple-500/30
+          "
+        >
+          <FiMessageSquare className="text-white text-3xl" />
+        </div>
+      </div>
 
       {reviews.length === 0 ? (
         <p className="text-center text-gray-400">No reviews available.</p>
@@ -64,8 +72,14 @@ function ReadReview() {
               "
             >
               {/* Glow Effect */}
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r 
-                from-blue-500/10 via-purple-500/10 to-pink-500/10 blur-xl -z-10" />
+              <div
+                className="
+                  absolute inset-0 rounded-2xl
+                  bg-gradient-to-r
+                  from-blue-500/10 via-purple-500/10 to-pink-500/10
+                  blur-xl -z-10
+                "
+              />
 
               {/* Review Message */}
               <p className="text-gray-200 text-sm leading-relaxed mb-6">

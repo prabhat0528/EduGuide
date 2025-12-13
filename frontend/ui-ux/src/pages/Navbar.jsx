@@ -1,10 +1,9 @@
 "use client";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/Authcontext";
 import { FiMenu, FiX } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -29,7 +28,7 @@ export default function Navbar() {
       "
     >
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        
+
         {/* LOGO */}
         <Link
           to="/"
@@ -38,16 +37,14 @@ export default function Navbar() {
           EduGuide
         </Link>
 
-        {/* NAV LINKS (Desktop) */}
+        {/* DESKTOP NAV */}
         <div className="hidden md:flex items-center gap-6">
-
           <NavItem label="About" path="/about" />
           <NavItem label="My Chats" path="/chats" />
+          <NavItem label="Read Reviews" path="/readreviews" />
 
-          {/* If user is logged in */}
           {user ? (
             <div className="flex items-center gap-4">
-              
               <Link to="/profile">
                 <img
                   src={
@@ -59,7 +56,6 @@ export default function Navbar() {
                 />
               </Link>
 
-              {/* Review Button AFTER Profile Pic */}
               <Link
                 to="/reviews"
                 className="px-4 py-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition"
@@ -84,18 +80,18 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Hamburger (Mobile) */}
-        <div className="md:hidden flex items-center">
+        {/* MOBILE MENU BUTTON */}
+        <div className="md:hidden">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="text-white text-2xl focus:outline-none"
+            className="text-white text-2xl"
           >
             {isMenuOpen ? <FiX /> : <FiMenu />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* MOBILE MENU */}
       {isMenuOpen && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -105,7 +101,7 @@ export default function Navbar() {
         >
           <Link
             to="/about"
-            className="text-gray-200 text-lg hover:text-blue-400 transition"
+            className="text-gray-200 text-lg hover:text-blue-400"
             onClick={() => setIsMenuOpen(false)}
           >
             About
@@ -113,25 +109,31 @@ export default function Navbar() {
 
           <Link
             to="/chats"
-            className="text-gray-200 text-lg hover:text-blue-400 transition"
+            className="text-gray-200 text-lg hover:text-blue-400"
             onClick={() => setIsMenuOpen(false)}
           >
             My Chats
           </Link>
 
+          <Link
+            to="/readreviews"
+            className="text-gray-200 text-lg hover:text-blue-400"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Read Reviews
+          </Link>
+
           {user ? (
             <div className="flex flex-col gap-3 items-center">
-
               <img
                 src={user.profile_picture || "https://via.placeholder.com/40"}
                 alt="Profile"
                 className="w-12 h-12 rounded-full object-cover border-2 border-blue-500"
               />
 
-              {/* Review Button AFTER Profile Pic */}
               <Link
                 to="/reviews"
-                className="px-6 py-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition w-full text-center"
+                className="px-6 py-2 rounded-full bg-green-500 text-white w-full text-center"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Review
@@ -139,7 +141,7 @@ export default function Navbar() {
 
               <button
                 onClick={handleLogout}
-                className="px-6 py-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition w-full"
+                className="px-6 py-2 rounded-full bg-red-500 text-white w-full"
               >
                 Logout
               </button>
@@ -147,7 +149,7 @@ export default function Navbar() {
           ) : (
             <Link
               to="/auth"
-              className="px-6 py-2 rounded-full bg-blue-600 text-white text-center hover:bg-blue-700 transition"
+              className="px-6 py-2 rounded-full bg-blue-600 text-white text-center"
               onClick={() => setIsMenuOpen(false)}
             >
               Get Started
@@ -159,11 +161,11 @@ export default function Navbar() {
   );
 }
 
-/* Nav item with animated underline hover */
+/* Animated Nav Item */
 function NavItem({ label, path }) {
   return (
-    <motion.div className="relative cursor-pointer transition">
-      <Link to={path} className="relative text-gray-300 hover:text-white">
+    <motion.div className="relative">
+      <Link to={path} className="text-gray-300 hover:text-white">
         {label}
         <motion.span
           className="absolute left-0 bottom-[-4px] h-[2px] bg-gradient-to-r from-blue-400 to-purple-400"

@@ -22,6 +22,9 @@ const userSchema = new mongoose.Schema({
     required: true,
     enum: ["Mentor", "Student"], 
   },
+  description:{
+    type: String,
+  },
   profile_picture: {
     type: String,
     default: "", 

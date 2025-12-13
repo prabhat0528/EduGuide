@@ -38,14 +38,14 @@ router.post("/create", async (req, res) => {
   }
 });
 
-module.exports = router;
+
 
 
 /*---------------------- Get All Reviews ---------------------------------*/
 router.get("/all", async (req, res) => {
   try {
     const reviews = await Review.find()
-      .sort({ createdAt: -1 }); // latest first
+      .sort({ createdAt: -1 }); 
 
     return res.status(200).json({
       success: true,
@@ -61,3 +61,5 @@ router.get("/all", async (req, res) => {
     });
   }
 });
+
+module.exports = router;

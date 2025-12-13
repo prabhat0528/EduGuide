@@ -28,7 +28,7 @@ export default function ReviewPage() {
       const res = await client.post("/reviews/create", {
         message: review,
         created_by: userId,
-        name:name
+        created_by_name:name
       });
 
       alert("Review submitted successfully!");

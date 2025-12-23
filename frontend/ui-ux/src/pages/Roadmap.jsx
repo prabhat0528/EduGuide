@@ -40,7 +40,7 @@ const Roadmap = () => {
 
     setLoading(true);
 
-    const res = await fetch("http://localhost:5000/generate-roadmap", {
+    const res = await fetch("https://eduguide-genai.onrender.com/generate-roadmap", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),

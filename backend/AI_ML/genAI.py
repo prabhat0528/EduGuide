@@ -16,19 +16,19 @@ app = Flask(__name__)
 CORS(app)
 
 # --------------------------------------------------
-# Load API key
+# API Key
 # --------------------------------------------------
-gemini_key = os.getenv("GEMINI_KEY")
-if not gemini_key:
-    raise ValueError("GEMINI_KEY not found in .env file!")
+GEMINI_KEY = os.getenv("GEMINI_KEY")
+if not GEMINI_KEY:
+    raise RuntimeError("GEMINI_KEY not found in environment")
 
 # --------------------------------------------------
-# Initialize Gemini
+# Gemini Model
 # --------------------------------------------------
 model = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
-    google_api_key=gemini_key,
-    temperature=0.7
+    google_api_key=GEMINI_KEY,
+    temperature=0.6
 )
 
 # ==================================================
@@ -42,7 +42,7 @@ You are an inspiring mentor.
 Generate exactly ONE powerful study-related motivational quote.
 
 Rules:
-- Related to learning, discipline, consistency, growth, or success
+- About learning, discipline, consistency, growth, or success
 - Said by a real great personality
 - Not a commonly viral quote
 
@@ -54,43 +54,41 @@ STRICT FORMAT:
 motivation_chain = motivation_prompt | model
 
 # ==================================================
-# ROADMAP PROMPT
+# ROADMAP PROMPT (JSON HARD MODE)
 # ==================================================
 roadmap_prompt = PromptTemplate(
     input_variables=["user_prompt"],
     template="""
-You are a highly experienced personal mentor.
+SYSTEM INSTRUCTION:
+You MUST respond with VALID JSON ONLY.
+NO markdown.
+NO explanations.
+NO comments.
+NO extra text.
+NO trailing commas.
+Use standard double quotes only.
 
-Create a DETAILED, REALISTIC learning roadmap.
-
-ABSOLUTE RULES:
-- Output ONLY valid JSON
-- No markdown
-- No explanations
-- No extra text
-- Start with { and end with }
-
-JSON STRUCTURE:
-{
+JSON FORMAT:
+{{
   "title": "Short roadmap title",
   "duration": "Total duration",
   "months": [
-    {
+    {{
       "month": "Month 1",
       "goal": "Main focus of this month",
       "weeks": [
-        {
+        {{
           "week": "Week 1",
           "focus": "What to learn",
           "details": "Clear explanation",
           "outcome": "What the learner will achieve"
-        }
+        }}
       ]
-    }
+    }}
   ]
-}
+}}
 
-Student request:
+STUDENT REQUEST:
 "{user_prompt}"
 """
 )
@@ -98,16 +96,27 @@ Student request:
 roadmap_chain = roadmap_prompt | model
 
 # ==================================================
-#  Safe JSON Extraction
+# JSON SANITIZER
 # ==================================================
-def extract_json(text):
+def sanitize_and_parse_json(text: str):
     """
-    Extract and parse first valid JSON object from model output
+    Safely extract and parse JSON from LLM output
     """
-    match = re.search(r"\{.*\}", text, re.DOTALL)
+    # Remove smart quotes
+    text = text.replace("“", '"').replace("”", '"').replace("’", "'")
+
+    # Extract first JSON object (non-greedy)
+    match = re.search(r"\{[\s\S]*\}", text)
     if not match:
-        raise ValueError("No valid JSON found in model response")
-    return json.loads(match.group())
+        raise ValueError("No JSON object found in model output")
+
+    json_text = match.group()
+
+    # Remove trailing commas
+    json_text = re.sub(r",\s*}", "}", json_text)
+    json_text = re.sub(r",\s*]", "]", json_text)
+
+    return json.loads(json_text)
 
 # ==================================================
 # ROUTES
@@ -115,45 +124,53 @@ def extract_json(text):
 
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"message": "AI Mentor API is running!"})
+    return jsonify({
+        "status": "running",
+        "service": "AI Mentor API"
+    })
 
 
 @app.route("/get-motivation", methods=["GET"])
 def get_motivation():
     try:
         result = motivation_chain.invoke({"x": ""})
-        return jsonify({"success": True, "quote": result.content})
+        return jsonify({
+            "success": True,
+            "quote": result.content.strip()
+        })
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 
 @app.route("/generate-roadmap", methods=["POST"])
 def generate_roadmap():
     try:
-        data = request.get_json()
-        user_prompt = data.get("prompt")
-
-        if not user_prompt:
+        data = request.get_json(silent=True)
+        if not data or not data.get("prompt"):
             return jsonify({
                 "success": False,
                 "error": "Prompt is required"
             }), 400
 
         result = roadmap_chain.invoke({
-            "user_prompt": user_prompt
+            "user_prompt": data["prompt"]
         })
 
-        raw_output = result.content
-
-        # # Debug 
-        # print("\n----- RAW MODEL OUTPUT -----\n", raw_output)
-
-        roadmap_json = extract_json(raw_output)
+        roadmap = sanitize_and_parse_json(result.content)
 
         return jsonify({
             "success": True,
-            "roadmap": roadmap_json
+            "roadmap": roadmap
         })
+
+    except json.JSONDecodeError:
+        return jsonify({
+            "success": False,
+            "error": "Model returned invalid JSON. Try again."
+        }), 500
 
     except Exception as e:
         return jsonify({
@@ -166,4 +183,4 @@ def generate_roadmap():
 # RUN
 # ==================================================
 if __name__ == "__main__":
-    app.run(port=5000, host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

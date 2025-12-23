@@ -47,6 +47,7 @@ const Roadmap = () => {
   const [activeIndex, setActiveIndex] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [rateLimited, setRateLimited] = useState(false);
 
   const contentRef = useRef(null);
 
@@ -57,7 +58,7 @@ const Roadmap = () => {
   }, [roadmaps, activeIndex, loading]);
 
   const generateRoadmap = async () => {
-    if (!prompt.trim() || loading) return;
+    if (!prompt.trim() || loading || rateLimited) return;
 
     setLoading(true);
     setError("");
@@ -72,6 +73,14 @@ const Roadmap = () => {
         }
       );
 
+      /* -------- RATE LIMIT HANDLING -------- */
+      if (res.status === 429) {
+        setRateLimited(true);
+        throw new Error(
+          "🚦 Too many requests! Please pause for a moment and try again."
+        );
+      }
+
       if (!res.ok) {
         throw new Error(`Server error (${res.status})`);
       }
@@ -85,6 +94,7 @@ const Roadmap = () => {
       setRoadmaps((prev) => [data.roadmap, ...prev]);
       setActiveIndex(0);
       setPrompt("");
+      setRateLimited(false);
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -132,11 +142,21 @@ const Roadmap = () => {
             </div>
           )}
 
+          {/* RATE LIMIT MOTIVATION */}
+          {rateLimited && (
+            <div className="bg-yellow-900/30 border border-yellow-700 text-yellow-300 p-3 rounded-lg text-sm">
+               You’re exploring fast! Take a short breather — quality roadmaps
+              take a moment to craft.
+            </div>
+          )}
+
           {/* THINKING UI */}
           {loading && (
             <div className="flex items-center gap-3 text-blue-400">
               <Loader2 className="animate-spin" size={18} />
-              <span className="text-sm">Thinking… crafting your roadmap</span>
+              <span className="text-sm">
+                Thinking… crafting your roadmap
+              </span>
             </div>
           )}
 
@@ -179,12 +199,13 @@ const Roadmap = () => {
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && generateRoadmap()}
             placeholder="Describe your goal..."
-            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={rateLimited}
+            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
 
           <button
             onClick={generateRoadmap}
-            disabled={loading}
+            disabled={loading || rateLimited}
             className="bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition disabled:opacity-50"
           >
             {loading ? (

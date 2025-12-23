@@ -13,6 +13,7 @@ import ChatPage from "./pages/ChatPage";
 import MyChats from "./pages/MyChats";
 import ReviewPage from "./pages/ReviewPage";
 import ReadReview from "./pages/ReadReview";
+import Roadmap from "./pages/Roadmap";
 
 function AppContent() {
   const location = useLocation();
@@ -37,6 +38,7 @@ function AppContent() {
         <Route path="/chats" element={<MyChats />} />
         <Route path = "/reviews" element={<ReviewPage/>}/>
         <Route path = "/readreviews" element={<ReadReview/>}/>
+        <Route path = "/roadmap" element={<Roadmap/>}/>
       </Routes>
     </>
   );

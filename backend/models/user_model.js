@@ -35,6 +35,12 @@ const userSchema = new mongoose.Schema({
       ref: "Conversation",
     },
   ],
+  roadmap :[
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Roadmap"
+    },
+  ],
 });
 
 module.exports = mongoose.model("User", userSchema);

@@ -4,12 +4,12 @@ import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import useLenis from "../hooks/Lenis";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/Authcontext"; // <-- import your auth context
+import { useAuth } from "../context/Authcontext";
 
 export default function Landing() {
   const navigate = useNavigate();
   useLenis();
-  const { user } = useAuth(); // <-- get user info
+  const { user } = useAuth(); 
 
   const [quote, setQuote] = useState(
     "Failure will never overtake me if my definition to succeed is strong enough"

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Send, Loader2, AlertCircle } from "lucide-react";
 
 /* -------------------- TYPEWRITER HOOK -------------------- */
-const useTypewriter = (text, speed = 12) => {
+const useTypewriter = (text, speed = 10) => {
   const [displayed, setDisplayed] = useState("");
 
   useEffect(() => {
@@ -22,18 +22,13 @@ const useTypewriter = (text, speed = 12) => {
   return displayed;
 };
 
-/* -------------------- WEEK CARD -------------------- */
-const WeekCard = ({ week }) => {
-  const typed = useTypewriter(
-    `${week.focus}\n\n${week.details}\n\nOutcome: ${week.outcome}`
-  );
+/* -------------------- ROADMAP TEXT CARD -------------------- */
+const RoadmapTextCard = ({ content }) => {
+  const typed = useTypewriter(content);
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-      <h3 className="text-sm font-semibold text-blue-300 mb-2">
-        {week.week}
-      </h3>
-      <pre className="whitespace-pre-wrap text-xs text-slate-200">
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+      <pre className="whitespace-pre-wrap text-sm text-slate-200 leading-relaxed">
         {typed}
       </pre>
     </div>
@@ -73,7 +68,6 @@ const Roadmap = () => {
         }
       );
 
-      /* -------- RATE LIMIT HANDLING -------- */
       if (res.status === 429) {
         setRateLimited(true);
         throw new Error(
@@ -91,7 +85,12 @@ const Roadmap = () => {
         throw new Error(data.error || "Failed to generate roadmap");
       }
 
-      setRoadmaps((prev) => [data.roadmap, ...prev]);
+      const newRoadmap = {
+        title: prompt,
+        content: data.roadmap,
+      };
+
+      setRoadmaps((prev) => [newRoadmap, ...prev]);
       setActiveIndex(0);
       setPrompt("");
       setRateLimited(false);
@@ -134,7 +133,7 @@ const Roadmap = () => {
           ref={contentRef}
           className="flex-1 overflow-y-auto p-6 space-y-6"
         >
-          {/* ERROR UI */}
+          {/* ERROR */}
           {error && (
             <div className="flex items-center gap-2 bg-red-900/40 border border-red-700 text-red-300 p-3 rounded-lg">
               <AlertCircle size={16} />
@@ -145,12 +144,11 @@ const Roadmap = () => {
           {/* RATE LIMIT MOTIVATION */}
           {rateLimited && (
             <div className="bg-yellow-900/30 border border-yellow-700 text-yellow-300 p-3 rounded-lg text-sm">
-               You’re exploring fast! Take a short breather — quality roadmaps
-              take a moment to craft.
+              🚀 You’re moving fast! Take a short pause — great plans take time.
             </div>
           )}
 
-          {/* THINKING UI */}
+          {/* LOADING */}
           {loading && (
             <div className="flex items-center gap-3 text-blue-400">
               <Loader2 className="animate-spin" size={18} />
@@ -170,25 +168,11 @@ const Roadmap = () => {
             </div>
           ) : (
             !loading &&
-            roadmaps[activeIndex]?.months.map((month, mIdx) => (
-              <div
-                key={mIdx}
-                className="bg-slate-900 border border-slate-800 rounded-xl p-6"
-              >
-                <h2 className="text-lg font-semibold text-blue-400">
-                  {month.month}
-                </h2>
-                <p className="text-sm text-slate-300 mt-1 mb-4">
-                  {month.goal}
-                </p>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  {month.weeks.map((week, wIdx) => (
-                    <WeekCard key={wIdx} week={week} />
-                  ))}
-                </div>
-              </div>
-            ))
+            roadmaps[activeIndex] && (
+              <RoadmapTextCard
+                content={roadmaps[activeIndex].content}
+              />
+            )
           )}
         </div>
 

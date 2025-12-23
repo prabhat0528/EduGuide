@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send } from "lucide-react";
+import { Send, Loader2, AlertCircle } from "lucide-react";
 
+/* -------------------- TYPEWRITER HOOK -------------------- */
 const useTypewriter = (text, speed = 12) => {
   const [displayed, setDisplayed] = useState("");
 
@@ -16,16 +17,36 @@ const useTypewriter = (text, speed = 12) => {
     }, speed);
 
     return () => clearInterval(interval);
-  }, [text]);
+  }, [text, speed]);
 
   return displayed;
 };
 
+/* -------------------- WEEK CARD -------------------- */
+const WeekCard = ({ week }) => {
+  const typed = useTypewriter(
+    `${week.focus}\n\n${week.details}\n\nOutcome: ${week.outcome}`
+  );
+
+  return (
+    <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+      <h3 className="text-sm font-semibold text-blue-300 mb-2">
+        {week.week}
+      </h3>
+      <pre className="whitespace-pre-wrap text-xs text-slate-200">
+        {typed}
+      </pre>
+    </div>
+  );
+};
+
+/* -------------------- MAIN COMPONENT -------------------- */
 const Roadmap = () => {
   const [prompt, setPrompt] = useState("");
   const [roadmaps, setRoadmaps] = useState([]);
   const [activeIndex, setActiveIndex] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const contentRef = useRef(null);
 
@@ -33,33 +54,47 @@ const Roadmap = () => {
     if (contentRef.current) {
       contentRef.current.scrollTop = contentRef.current.scrollHeight;
     }
-  }, [roadmaps, activeIndex]);
+  }, [roadmaps, activeIndex, loading]);
 
   const generateRoadmap = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim() || loading) return;
 
     setLoading(true);
+    setError("");
 
-    const res = await fetch("https://eduguide-genai.onrender.com/generate-roadmap", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
-    });
+    try {
+      const res = await fetch(
+        "https://eduguide-genai.onrender.com/generate-roadmap",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        }
+      );
 
-    const data = await res.json();
+      if (!res.ok) {
+        throw new Error(`Server error (${res.status})`);
+      }
 
-    if (data.success) {
-      setRoadmaps([data.roadmap, ...roadmaps]);
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to generate roadmap");
+      }
+
+      setRoadmaps((prev) => [data.roadmap, ...prev]);
       setActiveIndex(0);
       setPrompt("");
+    } catch (err) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
     <div className="h-screen flex bg-slate-950 text-white">
-      {/* Sidebar */}
+      {/* -------------------- SIDEBAR -------------------- */}
       <aside className="w-72 border-r border-slate-800 p-4 space-y-4">
         <h1 className="text-xl font-semibold text-blue-400">
           Roadmaps
@@ -82,22 +117,40 @@ const Roadmap = () => {
         </div>
       </aside>
 
-      {/* Main */}
+      {/* -------------------- MAIN -------------------- */}
       <main className="flex-1 flex flex-col">
-        {/* Content */}
+        {/* CONTENT */}
         <div
           ref={contentRef}
           className="flex-1 overflow-y-auto p-6 space-y-6"
         >
-          {activeIndex === null ? (
-            <div className="h-full flex items-center justify-center text-slate-400">
+          {/* ERROR UI */}
+          {error && (
+            <div className="flex items-center gap-2 bg-red-900/40 border border-red-700 text-red-300 p-3 rounded-lg">
+              <AlertCircle size={16} />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
+
+          {/* THINKING UI */}
+          {loading && (
+            <div className="flex items-center gap-3 text-blue-400">
+              <Loader2 className="animate-spin" size={18} />
+              <span className="text-sm">Thinking… crafting your roadmap</span>
+            </div>
+          )}
+
+          {/* EMPTY STATE */}
+          {activeIndex === null && !loading ? (
+            <div className="h-full flex items-center justify-center text-slate-400 text-center">
               Ask something like <br />
-              <span className="text-blue-400 mt-2">
+              <span className="text-blue-400 mt-2 block">
                 “Roadmap to become a MERN developer in 4 months”
               </span>
             </div>
           ) : (
-            roadmaps[activeIndex].months.map((month, mIdx) => (
+            !loading &&
+            roadmaps[activeIndex]?.months.map((month, mIdx) => (
               <div
                 key={mIdx}
                 className="bg-slate-900 border border-slate-800 rounded-xl p-6"
@@ -110,32 +163,16 @@ const Roadmap = () => {
                 </p>
 
                 <div className="grid md:grid-cols-2 gap-4">
-                  {month.weeks.map((week, wIdx) => {
-                    const typed = useTypewriter(
-                      `${week.focus}\n\n${week.details}\n\nOutcome: ${week.outcome}`
-                    );
-
-                    return (
-                      <div
-                        key={wIdx}
-                        className="bg-slate-800 border border-slate-700 rounded-lg p-4"
-                      >
-                        <h3 className="text-sm font-semibold text-blue-300 mb-2">
-                          {week.week}
-                        </h3>
-                        <pre className="whitespace-pre-wrap text-xs text-slate-200">
-                          {typed}
-                        </pre>
-                      </div>
-                    );
-                  })}
+                  {month.weeks.map((week, wIdx) => (
+                    <WeekCard key={wIdx} week={week} />
+                  ))}
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Input */}
+        {/* INPUT */}
         <div className="p-4 border-t border-slate-800 flex items-center gap-3">
           <input
             value={prompt}
@@ -148,9 +185,13 @@ const Roadmap = () => {
           <button
             onClick={generateRoadmap}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition"
+            className="bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition disabled:opacity-50"
           >
-            <Send size={18} />
+            {loading ? (
+              <Loader2 className="animate-spin" size={18} />
+            ) : (
+              <Send size={18} />
+            )}
           </button>
         </div>
       </main>

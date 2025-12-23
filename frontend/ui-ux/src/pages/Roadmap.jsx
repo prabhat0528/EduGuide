@@ -13,7 +13,7 @@ const Roadmap = () => {
 
     setLoading(true);
     try {
-      const res = await fetch("https://eduguide-python-ml.onrender.com/generate-roadmap", {
+      const res = await fetch("https://eduguide-genai.onrender.com/generate-roadmap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),

@@ -4,71 +4,114 @@ from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 import os
+import json
+import re
 
+# --------------------------------------------------
+# Load env
+# --------------------------------------------------
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
+# --------------------------------------------------
 # Load API key
+# --------------------------------------------------
 gemini_key = os.getenv("GEMINI_KEY")
 if not gemini_key:
     raise ValueError("GEMINI_KEY not found in .env file!")
 
-# Initialize Gemini model
+# --------------------------------------------------
+# Initialize Gemini
+# --------------------------------------------------
 model = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     google_api_key=gemini_key,
     temperature=0.7
 )
 
-# ---------------- MOTIVATION PROMPT ----------------
+# ==================================================
+# MOTIVATION PROMPT
+# ==================================================
 motivation_prompt = PromptTemplate(
     input_variables=["x"],
     template="""
-You are an inspiring mentor who gives powerful study-related motivational quotes.
+You are an inspiring mentor.
 
-Generate exactly ONE quote that is:
-- Focused on study, learning, discipline, success, consistency, or personal growth.
-- Said by a real great personality.
-- Unique and not a commonly viral quote.
+Generate exactly ONE powerful study-related motivational quote.
 
-Format STRICTLY:
+Rules:
+- Related to learning, discipline, consistency, growth, or success
+- Said by a real great personality
+- Not a commonly viral quote
+
+STRICT FORMAT:
 "Quote" — Name
 """
 )
 
 motivation_chain = motivation_prompt | model
 
-
-# ---------------- ROADMAP PROMPT ----------------
+# ==================================================
+# ROADMAP PROMPT
+# ==================================================
 roadmap_prompt = PromptTemplate(
     input_variables=["user_prompt"],
     template="""
-You are a highly experienced personal mentor guiding a student one-on-one.
+You are a highly experienced personal mentor.
 
-The student asked:
+Create a DETAILED, REALISTIC learning roadmap.
+
+ABSOLUTE RULES:
+- Output ONLY valid JSON
+- No markdown
+- No explanations
+- No extra text
+- Start with { and end with }
+
+JSON STRUCTURE:
+{
+  "title": "Short roadmap title",
+  "duration": "Total duration",
+  "months": [
+    {
+      "month": "Month 1",
+      "goal": "Main focus of this month",
+      "weeks": [
+        {
+          "week": "Week 1",
+          "focus": "What to learn",
+          "details": "Clear explanation",
+          "outcome": "What the learner will achieve"
+        }
+      ]
+    }
+  ]
+}
+
+Student request:
 "{user_prompt}"
-
-Your task:
-- Create a detailed, realistic, time-bound learning roadmap.
-- Respect the duration mentioned by the student (weeks or months).
-- Break it into clear timelines like Month 1, Week 1–2, etc.
-- Explain what to study, why it matters, and what outcome the student should achieve.
-- Maintain a friendly, encouraging mentor tone.
-
-STRICT OUTPUT RULES:
-- Plain text only
-- Do NOT use *, #, markdown, emojis, or special symbols
-- Use clean headings and hyphen-based bullet points only
-- No unnecessary filler, be clear and practical
 """
 )
 
 roadmap_chain = roadmap_prompt | model
 
+# ==================================================
+#  Safe JSON Extraction
+# ==================================================
+def extract_json(text):
+    """
+    Extract and parse first valid JSON object from model output
+    """
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        raise ValueError("No valid JSON found in model response")
+    return json.loads(match.group())
 
-# ---------------- ROUTES ----------------
+# ==================================================
+# ROUTES
+# ==================================================
 
 @app.route("/", methods=["GET"])
 def home():
@@ -79,9 +122,9 @@ def home():
 def get_motivation():
     try:
         result = motivation_chain.invoke({"x": ""})
-        return jsonify({"quote": result.content})
+        return jsonify({"success": True, "quote": result.content})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/generate-roadmap", methods=["POST"])
@@ -100,9 +143,16 @@ def generate_roadmap():
             "user_prompt": user_prompt
         })
 
+        raw_output = result.content
+
+        # # Debug 
+        # print("\n----- RAW MODEL OUTPUT -----\n", raw_output)
+
+        roadmap_json = extract_json(raw_output)
+
         return jsonify({
             "success": True,
-            "roadmap": result.content
+            "roadmap": roadmap_json
         })
 
     except Exception as e:
@@ -112,5 +162,8 @@ def generate_roadmap():
         }), 500
 
 
+# ==================================================
+# RUN
+# ==================================================
 if __name__ == "__main__":
     app.run(port=5000, host="0.0.0.0", debug=True)

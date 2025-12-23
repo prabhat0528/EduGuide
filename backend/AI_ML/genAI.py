@@ -7,28 +7,28 @@ import os
 import json
 import re
 
-# --------------------------------------------------
-# Load env
-# --------------------------------------------------
+# ==================================================
+# LOAD ENV
+# ==================================================
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-# --------------------------------------------------
-# API Key
-# --------------------------------------------------
+# ==================================================
+# API KEY
+# ==================================================
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 if not GEMINI_KEY:
     raise RuntimeError("GEMINI_KEY not found in environment")
 
-# --------------------------------------------------
-# Gemini Model
-# --------------------------------------------------
+# ==================================================
+# GEMINI MODEL 
+# ==================================================
 model = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     google_api_key=GEMINI_KEY,
-    temperature=0.6
+    temperature=0.2
 )
 
 # ==================================================
@@ -54,39 +54,44 @@ STRICT FORMAT:
 motivation_chain = motivation_prompt | model
 
 # ==================================================
-# ROADMAP PROMPT (JSON HARD MODE)
+# ROADMAP PROMPT 
 # ==================================================
 roadmap_prompt = PromptTemplate(
     input_variables=["user_prompt"],
     template="""
-SYSTEM INSTRUCTION:
-You MUST respond with VALID JSON ONLY.
-NO markdown.
-NO explanations.
-NO comments.
-NO extra text.
-NO trailing commas.
-Use standard double quotes only.
+SYSTEM INSTRUCTION (STRICT):
+You are a senior software engineering instructor.
+
+ABSOLUTE RULES:
+- Output VALID JSON ONLY
+- NO markdown
+- NO explanations
+- NO comments
+- NO trailing commas
+- Use ONLY correct technical terminology
+- NO spelling mistakes
+- NO corrupted or meaningless words
+- Professional, clear English only
 
 JSON FORMAT:
-{{
+{
   "title": "Short roadmap title",
   "duration": "Total duration",
   "months": [
-    {{
+    {
       "month": "Month 1",
       "goal": "Main focus of this month",
       "weeks": [
-        {{
+        {
           "week": "Week 1",
-          "focus": "What to learn",
-          "details": "Clear explanation",
-          "outcome": "What the learner will achieve"
-        }}
+          "focus": "Clear technical topic name",
+          "details": "Well-structured explanation in professional English",
+          "outcome": "Concrete measurable learning outcome"
+        }
       ]
-    }}
+    }
   ]
-}}
+}
 
 STUDENT REQUEST:
 "{user_prompt}"
@@ -99,13 +104,10 @@ roadmap_chain = roadmap_prompt | model
 # JSON SANITIZER
 # ==================================================
 def sanitize_and_parse_json(text: str):
-    """
-    Safely extract and parse JSON from LLM output
-    """
-    # Remove smart quotes
+    # Normalize quotes
     text = text.replace("“", '"').replace("”", '"').replace("’", "'")
 
-    # Extract first JSON object (non-greedy)
+    # Extract JSON block
     match = re.search(r"\{[\s\S]*\}", text)
     if not match:
         raise ValueError("No JSON object found in model output")
@@ -119,9 +121,22 @@ def sanitize_and_parse_json(text: str):
     return json.loads(json_text)
 
 # ==================================================
+# QUALITY VALIDATION
+# ==================================================
+def validate_roadmap_text(roadmap: dict):
+    forbidden_patterns = [
+        r"\bmm\b", r"\bdd\b", r"\bxx\b",
+        r"[A-Za-z]{2,}[A-Z]{2,}[a-z]+"
+    ]
+
+    text = json.dumps(roadmap)
+    for pattern in forbidden_patterns:
+        if re.search(pattern, text):
+            raise ValueError("Low-quality or corrupted text detected")
+
+# ==================================================
 # ROUTES
 # ==================================================
-
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
@@ -160,6 +175,7 @@ def generate_roadmap():
         })
 
         roadmap = sanitize_and_parse_json(result.content)
+        validate_roadmap_text(roadmap)
 
         return jsonify({
             "success": True,
@@ -178,9 +194,8 @@ def generate_roadmap():
             "error": str(e)
         }), 500
 
-
 # ==================================================
-# RUN
+# RUN SERVER
 # ==================================================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

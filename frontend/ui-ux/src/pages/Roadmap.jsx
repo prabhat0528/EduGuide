@@ -1,36 +1,59 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Send, Loader2, AlertCircle } from "lucide-react";
 
-/* -------------------- TYPEWRITER HOOK -------------------- */
-const useTypewriter = (text, speed = 10) => {
-  const [displayed, setDisplayed] = useState("");
+/* -------------------- FORMATTER -------------------- */
+const formatRoadmap = (text) => {
+  if (!text) return [];
 
-  useEffect(() => {
-    if (!text) return;
-    let i = 0;
-    setDisplayed("");
+  const clean = text
+    .replace(/[*#]/g, "")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
 
-    const interval = setInterval(() => {
-      setDisplayed((prev) => prev + text.charAt(i));
-      i++;
-      if (i >= text.length) clearInterval(interval);
-    }, speed);
+  const lines = clean.split("\n");
 
-    return () => clearInterval(interval);
-  }, [text, speed]);
+  const months = [];
+  let currentMonth = null;
 
-  return displayed;
+  lines.forEach((line) => {
+    if (line.toLowerCase().startsWith("month")) {
+      currentMonth = { title: line.trim(), weeks: [] };
+      months.push(currentMonth);
+    } else if (line.toLowerCase().includes("week")) {
+      currentMonth?.weeks.push(line.trim());
+    }
+  });
+
+  return months;
 };
 
-/* -------------------- ROADMAP TEXT CARD -------------------- */
-const RoadmapTextCard = ({ content }) => {
-  const typed = useTypewriter(content);
+/* -------------------- ROADMAP CARD -------------------- */
+const RoadmapCard = ({ content }) => {
+  const months = formatRoadmap(content);
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-      <pre className="whitespace-pre-wrap text-sm text-slate-200 leading-relaxed">
-        {typed}
-      </pre>
+    <div className="space-y-6">
+      {months.map((month, i) => (
+        <div
+          key={i}
+          className="bg-slate-900 border border-slate-800 rounded-xl p-5"
+        >
+          <h2 className="text-lg font-semibold text-blue-400 mb-3">
+            {month.title}
+          </h2>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            {month.weeks.map((week, j) => (
+              <div
+                key={j}
+                className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 text-sm text-slate-200"
+              >
+                {week}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
@@ -70,20 +93,14 @@ const Roadmap = () => {
 
       if (res.status === 429) {
         setRateLimited(true);
-        throw new Error(
-          "🚦 Too many requests! Please pause for a moment and try again."
-        );
+        throw new Error("🚦 Too many requests. Please pause and try again.");
       }
 
-      if (!res.ok) {
-        throw new Error(`Server error (${res.status})`);
-      }
+      if (!res.ok) throw new Error(`Server error (${res.status})`);
 
       const data = await res.json();
 
-      if (!data.success) {
-        throw new Error(data.error || "Failed to generate roadmap");
-      }
+      if (!data.success) throw new Error(data.error);
 
       const newRoadmap = {
         title: prompt,
@@ -105,9 +122,7 @@ const Roadmap = () => {
     <div className="h-screen flex bg-slate-950 text-white">
       {/* -------------------- SIDEBAR -------------------- */}
       <aside className="w-72 border-r border-slate-800 p-4 space-y-4">
-        <h1 className="text-xl font-semibold text-blue-400">
-          Roadmaps
-        </h1>
+        <h1 className="text-xl font-semibold text-blue-400">Roadmaps</h1>
 
         <div className="space-y-2">
           {roadmaps.map((r, idx) => (
@@ -128,12 +143,7 @@ const Roadmap = () => {
 
       {/* -------------------- MAIN -------------------- */}
       <main className="flex-1 flex flex-col">
-        {/* CONTENT */}
-        <div
-          ref={contentRef}
-          className="flex-1 overflow-y-auto p-6 space-y-6"
-        >
-          {/* ERROR */}
+        <div ref={contentRef} className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
             <div className="flex items-center gap-2 bg-red-900/40 border border-red-700 text-red-300 p-3 rounded-lg">
               <AlertCircle size={16} />
@@ -141,24 +151,19 @@ const Roadmap = () => {
             </div>
           )}
 
-          {/* RATE LIMIT MOTIVATION */}
           {rateLimited && (
             <div className="bg-yellow-900/30 border border-yellow-700 text-yellow-300 p-3 rounded-lg text-sm">
-              🚀 You’re moving fast! Take a short pause — great plans take time.
+               You’re moving fast! Take a short pause — great plans take time.
             </div>
           )}
 
-          {/* LOADING */}
           {loading && (
             <div className="flex items-center gap-3 text-blue-400">
               <Loader2 className="animate-spin" size={18} />
-              <span className="text-sm">
-                Thinking… crafting your roadmap
-              </span>
+              <span className="text-sm">Crafting your roadmap…</span>
             </div>
           )}
 
-          {/* EMPTY STATE */}
           {activeIndex === null && !loading ? (
             <div className="h-full flex items-center justify-center text-slate-400 text-center">
               Ask something like <br />
@@ -169,14 +174,11 @@ const Roadmap = () => {
           ) : (
             !loading &&
             roadmaps[activeIndex] && (
-              <RoadmapTextCard
-                content={roadmaps[activeIndex].content}
-              />
+              <RoadmapCard content={roadmaps[activeIndex].content} />
             )
           )}
         </div>
 
-        {/* INPUT */}
         <div className="p-4 border-t border-slate-800 flex items-center gap-3">
           <input
             value={prompt}

@@ -11,22 +11,21 @@ import re
 load_dotenv()
 
 app = Flask(__name__)
-# Explicitly allow your frontend origin if known, otherwise keep as is
+
 CORS(app)
 
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 
-# Using flash-1.5 or flash-2.0 as "2.5" is not a standard version yet
-# Adjusted to a stable model string
+
 model = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash", 
+    model="gemini-2.5-flash", 
     google_api_key=GEMINI_KEY,
-    temperature=0.1 # Lower temperature = more stable JSON
+    temperature=0.1 
 )
 
 def extract_json(text):
     try:
-        # Use regex to find the first '{' and last '}' to ignore extra AI chatter
+       
         match = re.search(r'\{.*\}', text, re.DOTALL)
         if not match:
             raise ValueError("No JSON object found in response")

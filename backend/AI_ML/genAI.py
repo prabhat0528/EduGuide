@@ -31,6 +31,18 @@ model = ChatGoogleGenerativeAI(
 )
 
 # ==================================================
+# JSON EXTRACT HELPER
+# ==================================================
+def extract_json(text):
+    start = text.find("{")
+    end = text.rfind("}") + 1
+
+    if start == -1 or end == -1:
+        raise ValueError("No JSON object found in model response")
+
+    return json.loads(text[start:end])
+
+# ==================================================
 # MOTIVATION PROMPT 
 # ==================================================
 motivation_prompt = PromptTemplate(
@@ -149,6 +161,7 @@ def generate_roadmap():
             "success": False,
             "error": "AI formatting error. Please try again."
         }), 500
+
 # ==================================================
 # RUN SERVER
 # ==================================================

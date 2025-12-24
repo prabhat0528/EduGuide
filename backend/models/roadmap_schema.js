@@ -8,4 +8,4 @@ const roadmapSchema = new mongoose.Schema({
 
 const Roadmap = mongoose.model("Roadmap", roadmapSchema);
 
-export default Roadmap;
+module.exports = Roadmap;

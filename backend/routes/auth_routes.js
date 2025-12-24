@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const Roadmap = require("../models/roadmap_schema")
 const User = require("../models/user_model");
 const { profileUpload } = require("../cloudinary_config");
 
@@ -76,12 +77,6 @@ router.post("/logout", (req, res) => {
   });
 });
 
-/* CHECK SESSION */
-router.get("/me", async (req, res) => {
-  if (!req.session.userId) return res.json({ user: null });
-  const user = await User.findById(req.session.userId);
-  res.json({ user });
-});
 
 
 /* UPDATE PROFILE */
@@ -125,5 +120,36 @@ router.put(
   }
 );
 
+
+
+router.post("/save-roadmap", async (req, res) => {
+  try {
+    const { topic, content } = req.body;
+    if (!req.session.userId) return res.status(401).json({ message: "Unauthorized" });
+
+  
+    const newRoadmap = new Roadmap({
+      topic,
+      content: JSON.stringify(content), 
+    });
+    await newRoadmap.save();
+
+    
+    await User.findByIdAndUpdate(req.session.userId, {
+      $push: { roadmap: newRoadmap._id }
+    });
+
+    res.status(201).json({ success: true, roadmap: newRoadmap });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.get("/me", async (req, res) => {
+  if (!req.session.userId) return res.json({ user: null });
+  const user = await User.findById(req.session.userId).populate("roadmap");
+  res.json({ user });
+});
 
 module.exports = router;

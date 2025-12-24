@@ -6,92 +6,59 @@ from langchain_core.prompts import PromptTemplate
 import os
 import json
 import traceback
+import re
 
-# ==================================================
-# LOAD ENV
-# ==================================================
 load_dotenv()
 
 app = Flask(__name__)
+# Explicitly allow your frontend origin if known, otherwise keep as is
 CORS(app)
 
-# ==================================================
-# API KEY & MODEL CONFIG
-# ==================================================
 GEMINI_KEY = os.getenv("GEMINI_KEY")
-if not GEMINI_KEY:
-    raise RuntimeError("GEMINI_KEY not found in environment")
 
-
+# Using flash-1.5 or flash-2.0 as "2.5" is not a standard version yet
+# Adjusted to a stable model string
 model = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash", 
+    model="gemini-1.5-flash", 
     google_api_key=GEMINI_KEY,
-    temperature=0.2
+    temperature=0.1 # Lower temperature = more stable JSON
 )
 
-# ==================================================
-# JSON EXTRACT
-# ==================================================
 def extract_json(text):
     try:
-       
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0]
-        elif "```" in text:
-            text = text.split("```")[1].split("```")[0]
-
-        text = text.strip()
-        start = text.find("{")
-        end = text.rfind("}") + 1
-
-        if start == -1 or end == -1:
-            raise ValueError("No valid JSON found")
-
-        return json.loads(text[start:end])
+        # Use regex to find the first '{' and last '}' to ignore extra AI chatter
+        match = re.search(r'\{.*\}', text, re.DOTALL)
+        if not match:
+            raise ValueError("No JSON object found in response")
+        
+        json_str = match.group(0)
+        return json.loads(json_str)
     except Exception as e:
-        print("JSON Parsing Error:", e)
-        print("Raw Output:", text)
-        raise ValueError("Invalid AI JSON format")
-
-# ==================================================
-# PROMPTS
-# ==================================================
+        print(f"Extraction Error: {e}")
+        print(f"Raw AI Text: {text}")
+        raise ValueError("AI failed to return valid JSON format")
 
 roadmap_prompt = PromptTemplate(
     input_variables=["user_prompt"],
-    template="""
-You are a career mentor.
+    template="""You are a professional career mentor.
+Generate a highly structured learning roadmap for: "{user_prompt}".
 
-The user will specify a learning goal and a duration.
-Generate a roadmap for exactly the requested duration.
+Strictly return ONLY a JSON object. No markdown formatting, no triple backticks, no preamble.
 
-Return ONLY valid JSON.
-
-JSON format:
+Required JSON Structure:
 {{
   "Month 1": {{ "Week 1": "Topic", "Week 2": "Topic", "Week 3": "Topic", "Week 4": "Topic" }},
   "Month 2": {{ "Week 1": "Topic", "Week 2": "Topic", "Week 3": "Topic", "Week 4": "Topic" }}
 }}
 
 Rules:
-- Months must match user's request.
-- Always follow Month X / Week Y structure.
-- Meaningful content.
-- Valid JSON only.
-- No emojis. No extra text.
-
-User Request: "{user_prompt}"
-"""
+1. Use the exact duration requested in the prompt.
+2. Provide specific, actionable learning topics.
+3. No emojis.
+4. No extra text outside the JSON."""
 )
 
 roadmap_chain = roadmap_prompt | model
-
-# ==================================================
-# ROUTES
-# ==================================================
-@app.route("/", methods=["GET"])
-def home():
-    return jsonify({"status": "running"})
 
 @app.route("/generate-roadmap", methods=["POST"])
 def generate_roadmap():
@@ -100,23 +67,20 @@ def generate_roadmap():
         if not data or not data.get("prompt"):
             return jsonify({"success": False, "error": "Prompt is required"}), 400
 
-        # Invoke the chain
         result = roadmap_chain.invoke({"user_prompt": data["prompt"]})
         
-        # Extract and parse the content
-        roadmap_data = extract_json(result.content.strip())
+        # result.content might be a string or object depending on version
+        content = result.content if hasattr(result, 'content') else str(result)
+        roadmap_data = extract_json(content)
 
         return jsonify({"success": True, "roadmap": roadmap_data})
 
     except Exception as e:
         traceback.print_exc()
         return jsonify({
-            "success": False,
-            "error": "Failed to generate roadmap. Try again."
+            "success": False, 
+            "error": str(e) if "AI failed" in str(e) else "Internal Server Error"
         }), 500
 
-# ==================================================
-# RUN SERVER
-# ==================================================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

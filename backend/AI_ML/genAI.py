@@ -13,7 +13,6 @@ import traceback
 load_dotenv()
 
 app = Flask(__name__)
-
 CORS(app)
 
 # ==================================================
@@ -26,81 +25,62 @@ if not GEMINI_KEY:
 model = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     google_api_key=GEMINI_KEY,
-    temperature=0.2 
+    temperature=0.2
 )
 
 # ==================================================
 # JSON EXTRACT
 # ==================================================
 def extract_json(text):
-    """
-    Safely extracts JSON even if the model wraps it in markdown blocks
-    """
     try:
-       
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0]
         elif "```" in text:
             text = text.split("```")[1].split("```")[0]
-        
+
         text = text.strip()
         start = text.find("{")
         end = text.rfind("}") + 1
 
         if start == -1 or end == -1:
-            raise ValueError("No valid JSON object found in response")
+            raise ValueError("No valid JSON found")
 
         return json.loads(text[start:end])
     except Exception as e:
-        print(f"JSON Parsing Error: {e} | Raw Text: {text}")
-        raise ValueError("AI provided invalid data format.")
+        print("JSON Parsing Error:", e)
+        print("Raw Output:", text)
+        raise ValueError("Invalid AI JSON format")
 
 # ==================================================
 # PROMPTS
 # ==================================================
-motivation_prompt = PromptTemplate(
-    input_variables=["x"],
-    template="""Generate ONE powerful study-related quote. 
-    Format: "Quote" — Name. No other text."""
-)
-
 roadmap_prompt = PromptTemplate(
     input_variables=["user_prompt"],
     template="""
-You are a career mentor. Create a 3-month roadmap for: "{user_prompt}"
+You are a career mentor.
+
+The user will specify a learning goal and a duration.
+Generate a roadmap for exactly the requested duration.
 
 Return ONLY valid JSON.
-The structure must be exactly like this:
-{{
-  "Month 1": {{
-    "Week 1": "Topic",
-    "Week 2": "Topic",
-    "Week 3": "Topic",
-    "Week 4": "Topic"
-  }},
-  "Month 2": {{
-    "Week 1": "Topic",
-    "Week 2": "Topic",
-    "Week 3": "Topic",
-    "Week 4": "Topic"
-  }},
-  "Month 3": {{
-    "Week 1": "Topic",
-    "Week 2": "Topic",
-    "Week 3": "Topic",
-    "Week 4": "Topic"
-  }}
-}}
+
+JSON format:
+{
+  "Month 1": { "Week 1": "Topic", "Week 2": "Topic", "Week 3": "Topic", "Week 4": "Topic" },
+  "Month 2": { "Week 1": "Topic", "Week 2": "Topic", "Week 3": "Topic", "Week 4": "Topic" }
+}
 
 Rules:
+- Months must match user's request.
+- Always follow Month X / Week Y structure.
+- Meaningful content.
 - Valid JSON only.
-- No emojis.
-- No conversational text.
+- No emojis. No extra text.
+
+User Request: "{user_prompt}"
 """
 )
 
-# Chains
-motivation_chain = motivation_prompt | model
 roadmap_chain = roadmap_prompt | model
 
 # ==================================================
@@ -108,18 +88,7 @@ roadmap_chain = roadmap_prompt | model
 # ==================================================
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"status": "running", "service": "AI Mentor API"})
-
-@app.route("/get-motivation", methods=["GET"])
-def get_motivation():
-    try:
-        result = motivation_chain.invoke({"x": ""})
-        return jsonify({
-            "success": True,
-            "quote": result.content.strip()
-        })
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    return jsonify({"status": "running"})
 
 @app.route("/generate-roadmap", methods=["POST"])
 def generate_roadmap():
@@ -128,27 +97,16 @@ def generate_roadmap():
         if not data or not data.get("prompt"):
             return jsonify({"success": False, "error": "Prompt is required"}), 400
 
-        # Invoke Model
         result = roadmap_chain.invoke({"user_prompt": data["prompt"]})
-        
-        # Process and Parse
-        raw_output = result.content.strip()
-        roadmap_data = extract_json(raw_output)
+        roadmap_data = extract_json(result.content.strip())
 
-        return jsonify({
-            "success": True,
-            "roadmap": roadmap_data
-        })
+        return jsonify({"success": True, "roadmap": roadmap_data})
 
     except Exception as e:
-       
-        print("--- ERROR LOG START ---")
         traceback.print_exc()
-        print("--- ERROR LOG END ---")
-        
         return jsonify({
             "success": False,
-            "error": "Failed to generate roadmap. Please try a different prompt."
+            "error": "Failed to generate roadmap. Try again."
         }), 500
 
 # ==================================================

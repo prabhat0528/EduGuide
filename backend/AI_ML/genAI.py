@@ -136,8 +136,7 @@ def generate_roadmap():
 
         raw_output = result.content.strip()
 
-        # Convert LLM output into proper JSON
-        roadmap_data = json.loads(raw_output)
+        roadmap_data = extract_json(raw_output)
 
         return jsonify({
             "success": True,
@@ -145,11 +144,11 @@ def generate_roadmap():
         })
 
     except Exception as e:
+        print("Roadmap error:", str(e))
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": "AI formatting error. Please try again."
         }), 500
-
 # ==================================================
 # RUN SERVER
 # ==================================================

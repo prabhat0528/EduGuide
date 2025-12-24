@@ -3,7 +3,7 @@ import { Send, Loader2, AlertCircle, Calendar, Menu, X, Rocket } from "lucide-re
 import { useAuth } from "../context/Authcontext"; 
 import axios from "axios";
 
-/* -------------------- ROADMAP CARD (Display Logic) -------------------- */
+/* -------------------- ROADMAP CARD -------------------- */
 const RoadmapCard = ({ roadmapData, title }) => {
   const data = roadmapData?.roadmap || roadmapData;
   if (!data || typeof data !== "object") return null;
@@ -62,18 +62,15 @@ const Roadmap = () => {
 
   const contentRef = useRef(null);
 
-  
   useEffect(() => {
     if (user && user.roadmap) {
       const formattedRoadmaps = user.roadmap.map((r) => ({
         id: r._id,
         title: r.topic,
-        
         content: typeof r.content === "string" ? JSON.parse(r.content) : r.content,
       }));
     
       setRoadmaps(formattedRoadmaps.reverse());
-      
       
       if (formattedRoadmaps.length > 0 && activeIndex === null) {
         setActiveIndex(0);
@@ -87,7 +84,6 @@ const Roadmap = () => {
     }
   }, [activeIndex]);
 
-  
   const generateRoadmap = async () => {
     if (!prompt.trim() || loading) return;
     if (!user) {
@@ -100,7 +96,7 @@ const Roadmap = () => {
     setIsSidebarOpen(false);
 
     try {
-     
+      
       const aiRes = await fetch("https://eduguide-genai.onrender.com/generate-roadmap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -110,20 +106,23 @@ const Roadmap = () => {
       const aiData = await aiRes.json();
       if (!aiRes.ok || !aiData.success) throw new Error(aiData.error || "AI Generation failed");
 
-     
       const saveRes = await axios.post("https://eduguide-backend-z81h.onrender.com/api/auth/save-roadmap", {
         topic: prompt,
-        content: aiData.roadmap, 
+       
+        content: JSON.stringify(aiData.roadmap), 
+      }, {
+        withCredentials: true 
       });
 
       if (saveRes.data.success) {
-      
         await checkAuth(); 
         setPrompt("");
         setActiveIndex(0); 
       }
     } catch (err) {
-      setError(err.message || "Failed to generate or save roadmap.");
+      console.error("Roadmap Generation/Save Error:", err);
+      const serverMessage = err.response?.data?.message || err.message;
+      setError(`Error: ${serverMessage}`);
     } finally {
       setLoading(false);
     }
@@ -132,7 +131,6 @@ const Roadmap = () => {
   return (
     <div className="h-screen flex bg-slate-950 text-slate-200 pt-16">
       
-      {/* MOBILE HAMBURGER BUTTON */}
       <button 
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         className="lg:hidden fixed bottom-24 right-6 z-50 bg-blue-600 p-4 rounded-full shadow-2xl text-white hover:scale-110 transition-transform"
@@ -140,7 +138,6 @@ const Roadmap = () => {
         {isSidebarOpen ? <X /> : <Menu />}
       </button>
 
-      {/* SIDEBAR */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-72 bg-slate-900 border-r border-slate-800 p-4 transition-transform duration-300 ease-in-out
         lg:relative lg:translate-x-0 pt-20 lg:pt-4
@@ -179,7 +176,6 @@ const Roadmap = () => {
         </div>
       </aside>
 
-      {/* OVERLAY */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
@@ -187,7 +183,6 @@ const Roadmap = () => {
         />
       )}
 
-      {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
         <div ref={contentRef} className="flex-1 overflow-y-auto p-6 md:p-12">
           {error && (
@@ -203,7 +198,7 @@ const Roadmap = () => {
               </div>
               <h2 className="text-3xl font-bold mb-3 text-white">Start Your Learning Journey</h2>
               <p className="text-slate-500 max-w-sm leading-relaxed">
-                Enter a topic and duration to generate a personalized learning roadmap that gets saved to your account.
+                Enter a topic and duration to generate a personalized learning roadmap.
               </p>
             </div>
           ) : loading ? (
@@ -222,7 +217,6 @@ const Roadmap = () => {
           )}
         </div>
 
-        {/* INPUT SECTION */}
         <div className="p-6 bg-gradient-to-t from-slate-950 via-slate-950 to-transparent">
           <div className="relative max-w-3xl mx-auto group">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25 group-focus-within:opacity-50 transition duration-1000"></div>

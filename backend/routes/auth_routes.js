@@ -124,27 +124,32 @@ router.put(
 
 router.post("/save-roadmap", async (req, res) => {
   try {
-    const { topic, content } = req.body;
-    if (!req.session.userId) return res.status(401).json({ message: "Unauthorized" });
+    if (!req.session || !req.session.userId) {
+      console.log("SESSION MISSING", req.session);
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
-  
+    const { topic, content } = req.body;
+
     const newRoadmap = new Roadmap({
       topic,
-      content: JSON.stringify(content), 
+      content: JSON.stringify(content),
     });
+
     await newRoadmap.save();
 
-    
-    await User.findByIdAndUpdate(req.session.userId, {
-      $push: { roadmap: newRoadmap._id }
-    });
+    await User.findByIdAndUpdate(
+      req.session.userId,
+      { $push: { roadmap: newRoadmap._id } },
+      { new: true }
+    );
 
     res.status(201).json({ success: true, roadmap: newRoadmap });
   } catch (err) {
+    console.error("SAVE ROADMAP ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 router.get("/me", async (req, res) => {
   if (!req.session.userId) return res.json({ user: null });

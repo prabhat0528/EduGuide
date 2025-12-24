@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const MongoStore = require("connect-mongo").default;
 const session = require("express-session");
+
 const auth_routes = require("./routes/auth_routes");
 const mentor_routes = require("./routes/mentor_routes");
 const review_route = require("./routes/review_route");
@@ -26,12 +27,14 @@ app.use(
   })
 );
 
-app.use(cookieParser());
+/* --------------------- MIDDLEWARE --------------------- */
 app.use(express.json());
+app.use(cookieParser());
 
 /* --------------------- SESSION --------------------- */
 app.use(
   session({
+    name: "eduguide.sid",
     secret: process.env.SESSION_SECRET || "mysecret",
     resave: false,
     saveUninitialized: false,
@@ -41,6 +44,8 @@ app.use(
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
     },
   })
 );
@@ -48,9 +53,9 @@ app.use(
 /* --------------------- ROUTES --------------------- */
 app.use("/api/auth", auth_routes);
 app.use("/api/mentors", mentor_routes);
-app.use("/reviews",review_route);
+app.use("/reviews", review_route);
 
-/* --------------------- DB --------------------- */
+/* --------------------- DATABASE --------------------- */
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("Connected to MongoDB"))
@@ -80,7 +85,7 @@ app.post("/api/conversation", async (req, res) => {
 
     return res.json(conversation);
   } catch (err) {
-    console.error(err);
+    console.error("Conversation Error:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });
@@ -148,49 +153,40 @@ const io = new Server(server, {
   cors: {
     origin: "https://eduguide-vhmi.onrender.com",
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
-  //  Client sends 'join chat' with the conversationId
   socket.on("join chat", (conversationId) => {
     socket.join(conversationId);
     console.log(`User joined room: ${conversationId}`);
   });
 
-  //  Client sends 'new message' with the payload
   socket.on("new message", async (payload) => {
     try {
-      
       const { conversationId, senderId, message } = payload;
 
-      // 1. Create a new Message document in the DB
       const newMessage = await Message.create({
         conversationId,
         sender: senderId,
-        message: message.content, 
+        message: message.content,
       });
 
-      // 2. Update the Conversation's lastMessage
       await Conversation.findByIdAndUpdate(conversationId, {
         lastMessage: newMessage._id,
       });
 
-      // 3. Populate the sender details for the message
       const populated = await Message.findById(newMessage._id).populate(
         "sender",
         "name profile_picture"
       );
 
-      // 4. Emit the populated message to all clients in the conversation room
-     
       io.to(conversationId).emit("message received", populated);
-
     } catch (err) {
       console.error("Socket Send Message Error:", err);
-      
     }
   });
 
@@ -200,6 +196,7 @@ io.on("connection", (socket) => {
 });
 
 /* --------------------- SERVER --------------------- */
-server.listen(9000, () => {
-  console.log("Server running on port 9000");
+const PORT = process.env.PORT || 9000;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

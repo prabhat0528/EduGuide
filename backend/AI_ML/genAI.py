@@ -22,8 +22,9 @@ GEMINI_KEY = os.getenv("GEMINI_KEY")
 if not GEMINI_KEY:
     raise RuntimeError("GEMINI_KEY not found in environment")
 
+
 model = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model="gemini-2.5-flash", 
     google_api_key=GEMINI_KEY,
     temperature=0.2
 )
@@ -33,6 +34,7 @@ model = ChatGoogleGenerativeAI(
 # ==================================================
 def extract_json(text):
     try:
+       
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0]
         elif "```" in text:
@@ -54,6 +56,7 @@ def extract_json(text):
 # ==================================================
 # PROMPTS
 # ==================================================
+
 roadmap_prompt = PromptTemplate(
     input_variables=["user_prompt"],
     template="""
@@ -65,10 +68,10 @@ Generate a roadmap for exactly the requested duration.
 Return ONLY valid JSON.
 
 JSON format:
-{
-  "Month 1": { "Week 1": "Topic", "Week 2": "Topic", "Week 3": "Topic", "Week 4": "Topic" },
-  "Month 2": { "Week 1": "Topic", "Week 2": "Topic", "Week 3": "Topic", "Week 4": "Topic" }
-}
+{{
+  "Month 1": {{ "Week 1": "Topic", "Week 2": "Topic", "Week 3": "Topic", "Week 4": "Topic" }},
+  "Month 2": {{ "Week 1": "Topic", "Week 2": "Topic", "Week 3": "Topic", "Week 4": "Topic" }}
+}}
 
 Rules:
 - Months must match user's request.
@@ -97,7 +100,10 @@ def generate_roadmap():
         if not data or not data.get("prompt"):
             return jsonify({"success": False, "error": "Prompt is required"}), 400
 
+        # Invoke the chain
         result = roadmap_chain.invoke({"user_prompt": data["prompt"]})
+        
+        # Extract and parse the content
         roadmap_data = extract_json(result.content.strip())
 
         return jsonify({"success": True, "roadmap": roadmap_data})

@@ -124,6 +124,7 @@ router.put(
 
 router.post("/save-roadmap", async (req, res) => {
   try {
+    console.log(req.session);
     if (!req.session || !req.session.userId) {
       console.log("SESSION MISSING", req.session);
       return res.status(401).json({ message: "Unauthorized" });

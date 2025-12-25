@@ -100,7 +100,7 @@ const Roadmap = () => {
           await axios.post("https://eduguide-backend-z81h.onrender.com/api/auth/save-roadmap", {
             topic: prompt,
             content: generatedContent, 
-          });
+          },{ withCredentials: true });
           
           
           await checkAuth(); 

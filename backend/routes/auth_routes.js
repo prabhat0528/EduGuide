@@ -20,7 +20,7 @@ router.post("/signup", profileUpload.single("profile_picture"), async (req, res)
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: "User already exists" });
 
-    const profilePicUrl = req.file ? req.file.path : "https://via.placeholder.com/150";
+    const profilePicUrl = req.file ? req.file.path : "https://photosbaba.com/wp-content/uploads/2024/09/no-dp_16.webp";
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const newUser = await User.create({

@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Send, Loader2, AlertCircle, Calendar, Menu, X, Rocket } from "lucide-react";
+import axios from "axios";
+import { useAuth } from "../context/Authcontext";
 
 /* -------------------- ROADMAP CARD -------------------- */
 const RoadmapCard = ({ roadmapData, title }) => {
+ 
   const data = roadmapData?.roadmap || roadmapData;
   if (!data || typeof data !== "object") return null;
 
@@ -42,6 +45,7 @@ const RoadmapCard = ({ roadmapData, title }) => {
 
 /* -------------------- MAIN COMPONENT -------------------- */
 const Roadmap = () => {
+  const { user, checkAuth } = useAuth(); 
   const [prompt, setPrompt] = useState("");
   const [roadmaps, setRoadmaps] = useState([]);
   const [activeIndex, setActiveIndex] = useState(null);
@@ -49,6 +53,23 @@ const Roadmap = () => {
   const [error, setError] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const contentRef = useRef(null);
+
+  
+  useEffect(() => {
+    if (user && user.roadmap) {
+      const formattedRoadmaps = user.roadmap.map((r) => ({
+        title: r.topic,
+        
+        content: typeof r.content === "string" ? JSON.parse(r.content) : r.content,
+        id: r._id
+      })).reverse(); 
+      
+      setRoadmaps(formattedRoadmaps);
+      if (formattedRoadmaps.length > 0 && activeIndex === null) {
+        setActiveIndex(0);
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     if (contentRef.current) contentRef.current.scrollTo({ top: 0, behavior: "smooth" });
@@ -61,6 +82,7 @@ const Roadmap = () => {
     setIsSidebarOpen(false);
 
     try {
+      // 1. Generate from AI
       const res = await fetch("https://eduguide-genai.onrender.com/generate-roadmap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,14 +90,34 @@ const Roadmap = () => {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Server responded with an error");
+      if (!res.ok) throw new Error(data.error || "Generation failed");
 
-      setRoadmaps((prev) => [{ title: prompt, content: data.roadmap }, ...prev]);
-      setActiveIndex(0);
+      const generatedContent = data.roadmap;
+
+      
+      if (user) {
+        try {
+          await axios.post("https://eduguide-backend-z81h.onrender.com/api/auth/save-roadmap", {
+            topic: prompt,
+            content: generatedContent, 
+          });
+          
+          
+          await checkAuth(); 
+        } catch (saveErr) {
+          console.error("Failed to save roadmap to DB:", saveErr);
+          
+        }
+      } else {
+       
+        setRoadmaps((prev) => [{ title: prompt, content: generatedContent }, ...prev]);
+        setActiveIndex(0);
+      }
+
       setPrompt("");
     } catch (err) {
-      console.error("Fetch Error:", err);
-      setError(err.message || "Failed to connect to the server.");
+      console.error("Process Error:", err);
+      setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
@@ -83,30 +125,49 @@ const Roadmap = () => {
 
   return (
     <div className="h-screen flex bg-slate-950 text-slate-200 pt-16">
-      <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden fixed bottom-24 right-6 z-50 bg-blue-600 p-4 rounded-full text-white">
+      {/* Mobile Menu Toggle */}
+      <button 
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+        className="lg:hidden fixed bottom-24 right-6 z-50 bg-blue-600 p-4 rounded-full text-white shadow-lg"
+      >
         {isSidebarOpen ? <X /> : <Menu />}
       </button>
 
+      {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-slate-900 border-r border-slate-800 p-4 transition-transform lg:relative lg:translate-x-0 pt-20 lg:pt-4 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <h1 className="text-xl font-bold text-blue-400 mb-8 px-2">Your Pathways</h1>
-        <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-180px)]">
+        <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-180px)] custom-scrollbar">
           {roadmaps.map((r, i) => (
-            <button key={i} onClick={() => { setActiveIndex(i); setIsSidebarOpen(false); }} className={`w-full text-left p-4 rounded-xl transition-all ${activeIndex === i ? "bg-blue-600/10 border border-blue-500/40 text-blue-400 font-semibold" : "hover:bg-slate-800/50 text-slate-400 border border-transparent"}`}>
-              <p className="line-clamp-2 text-sm uppercase">{r.title}</p>
+            <button 
+              key={i} 
+              onClick={() => { setActiveIndex(i); setIsSidebarOpen(false); }} 
+              className={`w-full text-left p-4 rounded-xl transition-all ${activeIndex === i ? "bg-blue-600/10 border border-blue-500/40 text-blue-400 font-semibold" : "hover:bg-slate-800/50 text-slate-400 border border-transparent"}`}
+            >
+              <p className="line-clamp-2 text-sm uppercase tracking-tight">{r.title}</p>
             </button>
           ))}
+          {roadmaps.length === 0 && (
+            <p className="text-slate-600 text-sm px-2">No roadmaps generated yet.</p>
+          )}
         </div>
       </aside>
 
+      {/* Main Content */}
       <main className="flex-1 flex flex-col relative overflow-hidden">
         <div ref={contentRef} className="flex-1 overflow-y-auto p-6 md:p-12">
-          {error && <div className="max-w-3xl mx-auto mb-6 bg-red-500/10 text-red-400 p-4 rounded-xl border border-red-500/20 flex items-center gap-3"><AlertCircle size={18} /> {error}</div>}
+          {error && (
+            <div className="max-w-3xl mx-auto mb-6 bg-red-500/10 text-red-400 p-4 rounded-xl border border-red-500/20 flex items-center gap-3">
+              <AlertCircle size={18} /> {error}
+            </div>
+          )}
           
           {activeIndex === null && !loading ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 bg-blue-600/10 rounded-3xl flex items-center justify-center mb-6"><Rocket className="text-blue-500" size={40} /></div>
+              <div className="w-20 h-20 bg-blue-600/10 rounded-3xl flex items-center justify-center mb-6">
+                <Rocket className="text-blue-500" size={40} />
+              </div>
               <h2 className="text-3xl font-bold mb-3 text-white">Start Your Learning Journey</h2>
-              <p className="text-slate-500">Enter a topic and duration to generate a roadmap.</p>
+              <p className="text-slate-500">Enter a topic and duration to generate a personalized AI roadmap.</p>
             </div>
           ) : loading ? (
             <div className="h-full flex flex-col items-center justify-center py-20">
@@ -114,17 +175,33 @@ const Roadmap = () => {
               <p className="text-blue-400 font-medium animate-pulse">Architecting your roadmap...</p>
             </div>
           ) : (
-            <RoadmapCard roadmapData={roadmaps[activeIndex].content} title={roadmaps[activeIndex].title} />
+            roadmaps[activeIndex] && (
+              <RoadmapCard roadmapData={roadmaps[activeIndex].content} title={roadmaps[activeIndex].title} />
+            )
           )}
         </div>
 
+        {/* Input Area */}
         <div className="p-6 bg-gradient-to-t from-slate-950 via-slate-950 to-transparent">
           <div className="relative max-w-3xl mx-auto">
-            <input value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === "Enter" && generateRoadmap()} placeholder="e.g. Master React in 2 months" className="w-full bg-slate-900 border border-slate-700 text-white rounded-2xl pl-6 pr-16 py-5 focus:border-blue-500 outline-none" />
-            <button onClick={generateRoadmap} disabled={loading} className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 p-3 rounded-xl">
+            <input 
+              value={prompt} 
+              onChange={(e) => setPrompt(e.target.value)} 
+              onKeyDown={(e) => e.key === "Enter" && generateRoadmap()} 
+              placeholder={user ? "e.g. Master React in 2 months" : "Login to save your roadmaps..."}
+              className="w-full bg-slate-900 border border-slate-700 text-white rounded-2xl pl-6 pr-16 py-5 focus:border-blue-500 outline-none transition-colors" 
+            />
+            <button 
+              onClick={generateRoadmap} 
+              disabled={loading || !prompt.trim()} 
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 p-3 rounded-xl transition-all"
+            >
               {loading ? <Loader2 className="animate-spin text-white" /> : <Send className="text-white" />}
             </button>
           </div>
+          {!user && !loading && (
+            <p className="text-center text-slate-600 text-xs mt-3">You are currently in guest mode. Your roadmaps won't be saved.</p>
+          )}
         </div>
       </main>
     </div>

@@ -33,7 +33,7 @@ export default function MyChats() {
 
       {chatList.length === 0 ? (
         <p className="text-center text-gray-300">
-          No chats available. Start a conversation with a mentor!
+          No chats available. 
         </p>
       ) : (
         <div className="max-w-xl mx-auto space-y-4">

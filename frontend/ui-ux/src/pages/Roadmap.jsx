@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Send, Loader2, AlertCircle, Calendar, Menu, X, Rocket } from "lucide-react";
+import { Send, Loader2, Calendar, Rocket } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/Authcontext";
 
@@ -25,13 +25,20 @@ const RoadmapCard = ({ roadmapData, title }) => {
             <div className="bg-blue-600 p-2 rounded-lg">
               <Calendar className="text-white" size={20} />
             </div>
-            <h2 className="text-2xl font-bold text-white uppercase tracking-wider">{month}</h2>
+            <h2 className="text-2xl font-bold text-white uppercase tracking-wider">
+              {month}
+            </h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4 ml-4 border-l-2 border-slate-800 pl-8 pb-4">
             {Object.entries(weeks).map(([week, task], j) => (
-              <div key={j} className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5">
-                <div className="text-xs font-black text-blue-500 mb-2 uppercase tracking-widest">{week}</div>
+              <div
+                key={j}
+                className="bg-slate-900/40 border border-slate-800 rounded-2xl p-5"
+              >
+                <div className="text-xs font-black text-blue-500 mb-2 uppercase tracking-widest">
+                  {week}
+                </div>
                 <p className="text-slate-300 leading-relaxed">{task}</p>
               </div>
             ))}
@@ -51,14 +58,16 @@ const Roadmap = () => {
   const [activeIndex, setActiveIndex] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const contentRef = useRef(null);
   const isSyncingRef = useRef(false);
 
-  /* =========================
-     USEEFFECT
-  ========================== */
+  /*  Reset sync when user changes  */
+  useEffect(() => {
+    isSyncingRef.current = false;
+  }, [user?._id]);
+
+  /*  Backend  UI  */
   useEffect(() => {
     if (!user || !Array.isArray(user.roadmap)) return;
     if (isSyncingRef.current) return;
@@ -67,36 +76,40 @@ const Roadmap = () => {
       .map((r) => ({
         id: r._id,
         title: r.topic,
-        content: typeof r.content === "string" ? JSON.parse(r.content) : r.content,
+        content:
+          typeof r.content === "string" ? JSON.parse(r.content) : r.content,
       }))
       .reverse();
 
     setRoadmaps(formatted);
-    setActiveIndex((prev) => (prev === null || prev >= formatted.length ? 0 : prev));
+    setActiveIndex((prev) =>
+      prev === null || prev >= formatted.length ? 0 : prev
+    );
   }, [user]);
 
+  /* Scroll top when roadmap changes */
   useEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [activeIndex]);
 
-  /* =========================
-     GENERATE ROADMAP
-  ========================== */
+  /* Generate Roadmap */
   const generateRoadmap = async () => {
     if (!prompt.trim() || loading) return;
 
     setLoading(true);
     setError("");
-    setIsSidebarOpen(false);
 
     try {
-      const res = await fetch("https://eduguide-genai.onrender.com/generate-roadmap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
+      const res = await fetch(
+        "https://eduguide-genai.onrender.com/generate-roadmap",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        }
+      );
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Generation failed");
@@ -104,13 +117,13 @@ const Roadmap = () => {
       const generatedContent = data.roadmap;
 
       if (user) {
+        isSyncingRef.current = true;
+
         const saveRes = await axios.post(
           "https://eduguide-backend-z81h.onrender.com/api/auth/save-roadmap",
           { topic: prompt, content: generatedContent },
           { withCredentials: true }
         );
-
-        isSyncingRef.current = true;
 
         setRoadmaps((prev) => [
           {
@@ -134,6 +147,7 @@ const Roadmap = () => {
       setPrompt("");
     } catch (err) {
       setError(err.message || "Something went wrong");
+      isSyncingRef.current = false;
     } finally {
       setLoading(false);
     }
@@ -142,7 +156,7 @@ const Roadmap = () => {
   return (
     <div className="h-screen flex bg-slate-950 text-slate-200 pt-16">
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-slate-900 border-r border-slate-800 p-4`}>
+      <aside className="fixed inset-y-0 left-0 z-40 w-72 bg-slate-900 border-r border-slate-800 p-4">
         <h1 className="text-xl font-bold text-blue-400 mb-8 px-2">Your Pathways</h1>
         <div className="space-y-2 overflow-y-auto">
           {roadmaps.map((r, i) => (
@@ -161,7 +175,7 @@ const Roadmap = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main */}
       <main className="flex-1 flex flex-col ml-72">
         <div ref={contentRef} className="flex-1 overflow-y-auto p-10">
           {error && <div className="text-red-400 mb-4">{error}</div>}

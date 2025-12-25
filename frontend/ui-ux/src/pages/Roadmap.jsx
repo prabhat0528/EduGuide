@@ -52,11 +52,16 @@ const Roadmap = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const contentRef = useRef(null);
 
-  /* ===== FIXED SYNC LOGIC ===== */
+  const contentRef = useRef(null);
+  const isSyncingRef = useRef(false);
+
+  /* =========================
+     USEEFFECT
+  ========================== */
   useEffect(() => {
     if (!user || !Array.isArray(user.roadmap)) return;
+    if (isSyncingRef.current) return;
 
     const formatted = user.roadmap
       .map((r) => ({
@@ -71,10 +76,14 @@ const Roadmap = () => {
   }, [user]);
 
   useEffect(() => {
-    if (contentRef.current) contentRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    if (contentRef.current) {
+      contentRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }, [activeIndex]);
 
-  /* ===== GENERATE ROADMAP ===== */
+  /* =========================
+     GENERATE ROADMAP
+  ========================== */
   const generateRoadmap = async () => {
     if (!prompt.trim() || loading) return;
 
@@ -101,7 +110,8 @@ const Roadmap = () => {
           { withCredentials: true }
         );
 
-        // Instant UI update
+        isSyncingRef.current = true;
+
         setRoadmaps((prev) => [
           {
             id: saveRes.data.roadmap._id,
@@ -112,7 +122,10 @@ const Roadmap = () => {
         ]);
 
         setActiveIndex(0);
+
         await checkAuth();
+
+        isSyncingRef.current = false;
       } else {
         setRoadmaps((prev) => [{ title: prompt, content: generatedContent }, ...prev]);
         setActiveIndex(0);
@@ -128,18 +141,59 @@ const Roadmap = () => {
 
   return (
     <div className="h-screen flex bg-slate-950 text-slate-200 pt-16">
-      {/* UI unchanged */}
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-slate-900 border-r border-slate-800 p-4 transition-transform lg:relative lg:translate-x-0 pt-20 lg:pt-4 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-slate-900 border-r border-slate-800 p-4`}>
         <h1 className="text-xl font-bold text-blue-400 mb-8 px-2">Your Pathways</h1>
         <div className="space-y-2 overflow-y-auto">
           {roadmaps.map((r, i) => (
-            <button key={r.id || i} onClick={() => setActiveIndex(i)} className={`w-full text-left p-4 rounded-xl ${activeIndex === i ? "bg-blue-600/10 border border-blue-500/40 text-blue-400" : "hover:bg-slate-800/50 text-slate-400"}`}>
+            <button
+              key={r.id || i}
+              onClick={() => setActiveIndex(i)}
+              className={`w-full text-left p-4 rounded-xl transition ${
+                activeIndex === i
+                  ? "bg-blue-600/10 border border-blue-500/40 text-blue-400"
+                  : "hover:bg-slate-800/50 text-slate-400"
+              }`}
+            >
               <p className="line-clamp-2 text-sm uppercase">{r.title}</p>
             </button>
           ))}
         </div>
       </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col ml-72">
+        <div ref={contentRef} className="flex-1 overflow-y-auto p-10">
+          {error && <div className="text-red-400 mb-4">{error}</div>}
+
+          {roadmaps[activeIndex] && (
+            <RoadmapCard
+              roadmapData={roadmaps[activeIndex].content}
+              title={roadmaps[activeIndex].title}
+            />
+          )}
+        </div>
+
+        {/* Input */}
+        <div className="p-6 bg-slate-900">
+          <div className="max-w-3xl mx-auto flex gap-3">
+            <input
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && generateRoadmap()}
+              placeholder="e.g. Master React in 2 months"
+              className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-5 py-4"
+            />
+            <button
+              onClick={generateRoadmap}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-500 px-6 py-4 rounded-xl"
+            >
+              {loading ? <Loader2 className="animate-spin" /> : <Send />}
+            </button>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };

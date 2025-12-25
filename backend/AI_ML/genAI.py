@@ -80,6 +80,35 @@ def generate_roadmap():
             "success": False, 
             "error": str(e) if "AI failed" in str(e) else "Internal Server Error"
         }), 500
+    
+
+# ---------------------MOTIVATION LOGIC-------------------------------------
+motivation_prompt = PromptTemplate(
+    input_variables=["x"],
+    template="""
+You are an inspiring mentor.
+
+Generate exactly ONE powerful study-related motivational quote.
+
+Rules:
+- Related to learning, discipline, consistency, growth, or success
+- Said by a real great personality
+- Not a commonly viral quote
+
+STRICT FORMAT:
+"Quote" — Name
+"""
+)
+
+motivation_chain = motivation_prompt | model
+
+@app.route("/get-motivation", methods=["GET"])
+def get_motivation():
+    try:
+        result = motivation_chain.invoke({"x": ""})
+        return jsonify({"success": True, "quote": result.content})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

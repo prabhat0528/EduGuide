@@ -30,12 +30,14 @@ embeddings = GoogleGenerativeAIEmbeddings(
 )
 
 # ==========================
-# Load / Build Vector Store
+# Build Vector Store
 # ==========================
-VECTOR_DB_PATH = "faiss_index_edu"
-
 def create_vector_store():
+    print("Building vector database...")
+
     file_path = "./EduGuideDocs.pdf"
+    if not os.path.exists(file_path):
+        raise FileNotFoundError("EduGuideDocs.pdf not found")
 
     loader = PyPDFLoader(file_path)
     docs = loader.load()
@@ -44,15 +46,9 @@ def create_vector_store():
     chunks = splitter.split_documents(docs)
 
     vector_store = FAISS.from_documents(chunks, embeddings)
-    vector_store.save_local(VECTOR_DB_PATH)
     return vector_store
 
-if os.path.exists(VECTOR_DB_PATH):
-    print("Loading existing vector database...")
-    vector_store = FAISS.load_local(VECTOR_DB_PATH, embeddings, allow_dangerous_deserialization=True)
-else:
-    print("Creating new vector database...")
-    vector_store = create_vector_store()
+vector_store = create_vector_store()
 
 # ==========================
 # Initialize LLM & QA Chain
@@ -74,19 +70,20 @@ qa_chain = RetrievalQA.from_chain_type(
 @app.route("/get-information", methods=["POST"])
 def get_information():
     data = request.get_json()
-    query = data.get("question")
 
-    if not query:
+    if not data or "question" not in data:
         return jsonify({"error": "Question is required"}), 400
 
-    response = qa_chain.invoke(query)
+    response = qa_chain.invoke(data["question"])
+
     return jsonify({
-        "question": query,
+        "question": data["question"],
         "answer": response["result"]
     })
 
 # ==========================
-# Run Server
+# Run Server 
 # ==========================
 if __name__ == "__main__":
-    app.run(port = 8080, host = '0.0.0.0', debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)

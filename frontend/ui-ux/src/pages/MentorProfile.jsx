@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/Authcontext"; // Needed for current user ID
+import { useAuth } from "../context/Authcontext"; 
 
 const BASE_URL = "https://eduguide-backend-z81h.onrender.com";
 
 export default function MentorProfile() {
-  const { id: mentorId } = useParams(); // Rename to mentorId for clarity
+  const { id: mentorId } = useParams(); 
   const { user } = useAuth(); // Get current user
   const navigate = useNavigate();
   const [mentor, setMentor] = useState(null);
@@ -89,7 +89,7 @@ export default function MentorProfile() {
         )}
 
         <button
-          onClick={handleStartChat} // Updated to use the new function
+          onClick={handleStartChat} 
           className="w-full mt-6 bg-blue-600 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
         >
           Start Chat

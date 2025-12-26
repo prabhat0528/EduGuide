@@ -18,6 +18,7 @@ const User = require("./models/user_model");
 const cors = require("cors");
 
 const app = express();
+app.set("trust proxy", 1);
 
 /* --------------------- CORS --------------------- */
 app.use(
@@ -28,7 +29,7 @@ app.use(
 );
 
 /* --------------------- MIDDLEWARE --------------------- */
-app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(cookieParser());
 

@@ -1,10 +1,10 @@
-"use client";
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import useLenis from "../hooks/Lenis";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/Authcontext";
+import { MessageCircle, X } from "lucide-react";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -15,25 +15,45 @@ export default function Landing() {
     "Failure will never overtake me if my definition to succeed is strong enough"
   );
 
-  // Function to fetch quote
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { sender: "bot", text: "Hi  Ask me anything about EduGuide!" }
+  ]);
+  const [input, setInput] = useState("");
+
   const fetchQuote = () => {
     fetch("https://eduguide-genai.onrender.com/get-motivation")
       .then((res) => res.json())
       .then((data) => {
         if (data.quote) setQuote(data.quote);
       })
-      .catch((err) => {
-        console.error("Quote fetch error:", err);
+      .catch(() => {
         setQuote("Stay motivated and keep growing!");
       });
   };
 
-  // Fetch quote on load + every 5 minutes
   useEffect(() => {
     fetchQuote();
-    const interval = setInterval(fetchQuote, 300000); // 5 mins
+    const interval = setInterval(fetchQuote, 300000); 
     return () => clearInterval(interval);
   }, []);
+
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const userMsg = { sender: "user", text: input };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+
+    const botMsg = {
+      sender: "bot",
+      text: "Great question! EduGuide helps you discover your perfect career path "
+    };
+
+    setTimeout(() => {
+      setMessages((prev) => [...prev, botMsg]);
+    }, 700);
+  };
 
   return (
     <>
@@ -53,13 +73,11 @@ export default function Landing() {
           transition={{ repeat: Infinity, duration: 12 }}
         />
 
-        {/* WAVY BACKGROUND */}
         <div className="absolute inset-0 bg-[url('https://i.ibb.co/7S8T3Fc/waves.png')] opacity-20 bg-cover bg-center" />
 
-        {/* HERO SECTION */}
+        {/* HERO */}
         <section className="relative z-20 flex flex-col items-center text-center px-6 mt-20">
 
-          {/* Dynamic Quote */}
           <AnimatePresence mode="wait">
             <motion.p
               key={quote}
@@ -96,13 +114,12 @@ export default function Landing() {
             courses, and get step-by-step growth roadmaps.
           </motion.p>
 
-          {/* CONDITIONAL BUTTON */}
           {user ? (
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.2 }}
-              onClick={() => navigate("/features")} 
+              onClick={() => navigate("/features")}
               className="mt-10 px-10 py-4 rounded-full text-lg font-semibold bg-gradient-to-r from-green-400 to-blue-600 shadow-xl hover:scale-105 transition"
             >
               Explore our Features →
@@ -121,33 +138,76 @@ export default function Landing() {
 
         </section>
 
-        {/* FEATURE CARDS */}
+        {/* FEATURES */}
         <section className="relative z-20 px-8 md:px-20 mt-32">
           <h2 className="text-center text-4xl font-bold mb-12">
             What Makes <span className="text-blue-300">EduGuide</span> Special?
           </h2>
 
           <div className="grid md:grid-cols-3 gap-10">
-            <Card
-              title="AI-Based Career Guidance"
-              desc="Get personalized suggestions for the best career paths based on your skills and interests."
-            />
-            <Card
-              title="Smart Course Recommendations"
-              desc="Receive curated course lists to build the skills needed to reach your goals."
-            />
-            <Card
-              title="Step-by-Step Roadmaps"
-              desc="Detailed learning paths and preparation plans tailored for your chosen career."
-            />
+            <Card title="AI-Based Career Guidance" desc="Get personalized career paths based on your skills and interests." />
+            <Card title="Smart Course Recommendations" desc="Curated courses to build skills you need." />
+            <Card title="Step-by-Step Roadmaps" desc="Clear learning paths tailored for your future." />
           </div>
         </section>
 
-        {/* FOOTER */}
         <footer className="mt-32 py-10 text-center text-gray-400 border-t border-white/10">
           © {new Date().getFullYear()} EduGuide — Personalized Career & Education Advisor
         </footer>
 
+        {/* FLOATING CHATBOT */}
+        <motion.div
+          animate={{ y: [0, -10, 0] }}
+          transition={{ repeat: Infinity, duration: 2 }}
+          className="fixed bottom-6 right-6 z-50 cursor-pointer"
+          onClick={() => setChatOpen(true)}
+        >
+          <div className="relative">
+            <MessageCircle className="w-14 h-14 text-white bg-blue-600 p-3 rounded-full shadow-xl" />
+            <span className="absolute -top-10 right-0 bg-black text-white text-xs px-3 py-1 rounded-md">
+              Ask me about this app
+            </span>
+          </div>
+        </motion.div>
+
+        {chatOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="fixed bottom-24 right-6 w-80 h-96 bg-[#0A0F1F] rounded-2xl shadow-2xl z-50 flex flex-col border border-white/10"
+          >
+            <div className="flex items-center justify-between p-3 border-b border-white/10">
+              <span className="font-semibold text-white">EduGuide Assistant</span>
+              <X className="cursor-pointer" onClick={() => setChatOpen(false)} />
+            </div>
+
+            <div className="flex-1 p-3 overflow-y-auto space-y-2 text-sm">
+              {messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`p-2 rounded-lg max-w-[85%] ${
+                    msg.sender === "user" ? "bg-blue-600 ml-auto" : "bg-white/10"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+
+            <div className="p-2 border-t border-white/10 flex gap-2">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Ask something..."
+                className="flex-1 bg-black/40 px-3 py-2 rounded-lg text-sm outline-none"
+              />
+              <button onClick={sendMessage} className="bg-blue-600 px-4 py-2 rounded-lg text-sm">
+                Send
+              </button>
+            </div>
+          </motion.div>
+        )}
       </div>
     </>
   );
@@ -155,10 +215,7 @@ export default function Landing() {
 
 function Card({ title, desc }) {
   return (
-    <motion.div
-      whileHover={{ scale: 1.03 }}
-      className="p-8 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/10 shadow-lg"
-    >
+    <motion.div whileHover={{ scale: 1.03 }} className="p-8 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/10 shadow-lg">
       <h3 className="text-xl font-bold text-blue-200">{title}</h3>
       <p className="text-gray-300 mt-3">{desc}</p>
     </motion.div>

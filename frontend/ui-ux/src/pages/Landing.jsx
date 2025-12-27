@@ -17,11 +17,11 @@ export default function Landing() {
 
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Hi  Ask me anything about EduGuide!" }
+    { sender: "bot", text: "Hi Ask me anything about EduGuide!" }
   ]);
   const [input, setInput] = useState("");
 
-  //  Chatbot upgrades
+  // Chatbot enhancements
   const [typingText, setTypingText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
@@ -43,17 +43,29 @@ export default function Landing() {
     return () => clearInterval(interval);
   }, []);
 
-  //  Auto-scroll
+  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typingText]);
 
- const sendMessage = async () => {
+  const formatBotMessage = (text) => {
+    if (!text.includes("EduGuide")) return { type: "text", content: text };
+
+    const parts = text.split("*").map(t => t.trim()).filter(Boolean);
+
+    return {
+      type: "card",
+      title: parts[0],
+      bullets: parts.slice(1)
+    };
+  };
+
+  const sendMessage = async () => {
     if (!input.trim() || isTyping) return;
 
     const userMsg = { sender: "user", text: input };
-    setMessages((prev) => [...prev, userMsg]);
-    const currentQuestion = input; 
+    setMessages(prev => [...prev, userMsg]);
+    const question = input;
     setInput("");
 
     setIsTyping(true);
@@ -63,35 +75,29 @@ export default function Landing() {
       const res = await fetch("https://eduguide-rag.onrender.com/get-information", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: currentQuestion }),
+        body: JSON.stringify({ question }),
       });
 
-      if (!res.ok) throw new Error("Server error");
-
       const data = await res.json();
-      
-      
-      const cleanAnswer = data.answer.replace(/\\n/g, ' ').replace(/\n/g, ' ').trim();
+      const answer = data.answer.replace(/\n/g, " ").trim();
 
-      // Writing Effect Logic
       let i = 0;
       const interval = setInterval(() => {
-        setTypingText((prev) => prev + cleanAnswer[i]);
+        setTypingText(prev => prev + answer[i]);
         i++;
-
-        if (i >= cleanAnswer.length) {
+        if (i >= answer.length) {
           clearInterval(interval);
-          setMessages((prev) => [...prev, { sender: "bot", text: cleanAnswer }]);
+          setMessages(prev => [...prev, { sender: "bot", text: answer }]);
           setTypingText("");
           setIsTyping(false);
         }
-      }, 15); 
-    } catch (err) {
-      console.error(err);
-      setMessages((prev) => [...prev, { sender: "bot", text: "Something went wrong. Please try again." }]);
+      }, 15);
+    } catch {
+      setMessages(prev => [...prev, { sender: "bot", text: "Something went wrong. Please try again." }]);
       setIsTyping(false);
     }
   };
+
   return (
     <>
       <Navbar />
@@ -99,76 +105,32 @@ export default function Landing() {
       <div className="relative min-h-screen overflow-hidden bg-[#0A0F1F] text-white">
 
         {/* BACKGROUND ORBS */}
-        <motion.div
-          className="absolute top-[-150px] left-[-100px] w-[450px] h-[450px] bg-blue-500/30 rounded-full blur-[200px]"
-          animate={{ x: [0, 40, 0], y: [0, -40, 0] }}
-          transition={{ repeat: Infinity, duration: 12 }}
-        />
-        <motion.div
-          className="absolute bottom-[-150px] right-[-120px] w-[500px] h-[500px] bg-purple-500/30 rounded-full blur-[200px]"
-          animate={{ x: [0, -40, 0], y: [0, 40, 0] }}
-          transition={{ repeat: Infinity, duration: 12 }}
-        />
-
+        <motion.div className="absolute top-[-150px] left-[-100px] w-[450px] h-[450px] bg-blue-500/30 rounded-full blur-[200px]" animate={{ x: [0, 40, 0], y: [0, -40, 0] }} transition={{ repeat: Infinity, duration: 12 }} />
+        <motion.div className="absolute bottom-[-150px] right-[-120px] w-[500px] h-[500px] bg-purple-500/30 rounded-full blur-[200px]" animate={{ x: [0, -40, 0], y: [0, 40, 0] }} transition={{ repeat: Infinity, duration: 12 }} />
         <div className="absolute inset-0 bg-[url('https://i.ibb.co/7S8T3Fc/waves.png')] opacity-20 bg-cover bg-center" />
 
         {/* HERO */}
         <section className="relative z-20 flex flex-col items-center text-center px-6 mt-20">
-
           <AnimatePresence mode="wait">
-            <motion.p
-              key={quote}
-              className="text-blue-300 text-lg italic max-w-2xl mb-6 px-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1 }}
-            >
+            <motion.p key={quote} className="text-blue-300 text-lg italic max-w-2xl mb-6 px-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 1 }}>
               {quote}
             </motion.p>
           </AnimatePresence>
 
-          <motion.h1
-            className="text-5xl md:text-7xl font-extrabold leading-tight max-w-4xl"
-            initial={{ opacity: 0, y: 60 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-          >
-            Discover Your
-            <span className="bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
-              {" "}Perfect Career Path
-            </span>
+          <motion.h1 className="text-5xl md:text-7xl font-extrabold leading-tight max-w-4xl" initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+            Discover Your <span className="bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">Perfect Career Path</span>
           </motion.h1>
 
-          <motion.p
-            className="text-gray-300 mt-5 text-lg max-w-2xl"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9 }}
-          >
-            EduGuide is your one-stop personalized career & education advisor —
-            helping you find your strengths, choose the right career, explore
-            courses, and get step-by-step growth roadmaps.
+          <motion.p className="text-gray-300 mt-5 text-lg max-w-2xl" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
+            EduGuide is your one-stop personalized career & education advisor — helping you find your strengths, choose the right career, explore courses, and get step-by-step growth roadmaps.
           </motion.p>
 
           {user ? (
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.2 }}
-              onClick={() => navigate("/features")}
-              className="mt-10 px-10 py-4 rounded-full text-lg font-semibold bg-gradient-to-r from-green-400 to-blue-600 shadow-xl hover:scale-105 transition"
-            >
+            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} onClick={() => navigate("/features")} className="mt-10 px-10 py-4 rounded-full text-lg font-semibold bg-gradient-to-r from-green-400 to-blue-600 shadow-xl hover:scale-105 transition">
               Explore our Features →
             </motion.button>
           ) : (
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.2 }}
-              onClick={() => navigate("/auth")}
-              className="mt-10 px-10 py-4 rounded-full text-lg font-semibold bg-gradient-to-r from-teal-400 to-blue-600 shadow-xl hover:scale-105 transition"
-            >
+            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} onClick={() => navigate("/auth")} className="mt-10 px-10 py-4 rounded-full text-lg font-semibold bg-gradient-to-r from-teal-400 to-blue-600 shadow-xl hover:scale-105 transition">
               Start Your Journey →
             </motion.button>
           )}
@@ -192,40 +154,41 @@ export default function Landing() {
         </footer>
 
         {/* FLOATING CHATBOT */}
-        <motion.div
-          animate={{ y: [0, -10, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-          className="fixed bottom-6 right-6 z-50 cursor-pointer"
-          onClick={() => setChatOpen(true)}
-        >
+        <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="fixed bottom-6 right-6 z-50 cursor-pointer" onClick={() => setChatOpen(true)}>
           <MessageCircle className="w-14 h-14 text-white bg-blue-600 p-3 rounded-full shadow-xl" />
         </motion.div>
 
         {chatOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="fixed bottom-24 right-6 w-80 h-96 bg-[#0A0F1F] rounded-2xl shadow-2xl z-50 flex flex-col border border-white/10"
-          >
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="fixed bottom-24 right-6 w-80 h-96 bg-[#0A0F1F] rounded-2xl shadow-2xl z-50 flex flex-col border border-white/10">
             <div className="flex items-center justify-between p-3 border-b border-white/10">
               <span className="font-semibold text-white">EduGuide Assistant</span>
               <X className="cursor-pointer" onClick={() => setChatOpen(false)} />
             </div>
 
             <div className="flex-1 p-3 overflow-y-auto space-y-2 text-sm">
-              {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`p-2 rounded-lg max-w-[85%] ${
-                    msg.sender === "user" ? "bg-blue-600 ml-auto" : "bg-white/10"
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              ))}
+              {messages.map((msg, i) => {
+                if (msg.sender === "user") {
+                  return <div key={i} className="p-2 rounded-lg max-w-[85%] bg-blue-600 ml-auto">{msg.text}</div>;
+                }
+
+                const formatted = formatBotMessage(msg.text);
+
+                if (formatted.type === "card") {
+                  return (
+                    <div key={i} className="bg-white/10 p-4 rounded-xl max-w-[90%] space-y-2">
+                      <h3 className="text-blue-300 font-bold">{formatted.title}</h3>
+                      <ul className="list-disc list-inside text-gray-300 space-y-1">
+                        {formatted.bullets.map((b, idx) => <li key={idx}>{b}</li>)}
+                      </ul>
+                    </div>
+                  );
+                }
+
+                return <div key={i} className="p-2 rounded-lg max-w-[85%] bg-white/10">{msg.text}</div>;
+              })}
 
               {isTyping && (
-                <div className="p-2 rounded-lg max-w-[85%] bg-white/10">
+                <div className="p-2 rounded-lg max-w-[85%] bg-white/10 text-gray-300 whitespace-pre-wrap leading-relaxed">
                   {typingText}
                   <span className="animate-pulse">▍</span>
                 </div>
@@ -235,16 +198,8 @@ export default function Landing() {
             </div>
 
             <div className="p-2 border-t border-white/10 flex gap-2">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                placeholder="Ask something..."
-                className="flex-1 bg-black/40 px-3 py-2 rounded-lg text-sm outline-none"
-              />
-              <button onClick={sendMessage} className="bg-blue-600 px-4 py-2 rounded-lg text-sm">
-                Send
-              </button>
+              <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendMessage()} placeholder="Ask something..." className="flex-1 bg-black/40 px-3 py-2 rounded-lg text-sm outline-none" />
+              <button onClick={sendMessage} className="bg-blue-600 px-4 py-2 rounded-lg text-sm">Send</button>
             </div>
           </motion.div>
         )}

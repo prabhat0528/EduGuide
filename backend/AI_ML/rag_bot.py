@@ -55,7 +55,8 @@ vector_store = create_vector_store()
 # ==========================
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
-    google_api_key=GEMINI_KEY
+    google_api_key=GEMINI_KEY,
+    convert_system_message_to_human=True
 )
 
 qa_chain = RetrievalQA.from_chain_type(

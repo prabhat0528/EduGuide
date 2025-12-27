@@ -53,7 +53,7 @@ export default function Landing() {
 
     const userMsg = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMsg]);
-    const currentInput = input; 
+    const currentQuestion = input; 
     setInput("");
 
     setIsTyping(true);
@@ -63,21 +63,18 @@ export default function Landing() {
       const res = await fetch("https://eduguide-rag.onrender.com/get-information", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: currentInput }), 
+        body: JSON.stringify({ question: currentQuestion }),
       });
 
-      if (!res.ok) throw new Error("Server Error");
+      if (!res.ok) throw new Error("Server error");
 
       const data = await res.json();
       
       
-      const cleanAnswer = data.answer
-        .replace(/\\n/g, " ") 
-        .replace(/\n/g, " ")   
-        .trim();
+      const cleanAnswer = data.answer.replace(/\\n/g, ' ').replace(/\n/g, ' ').trim();
 
+      // Writing Effect Logic
       let i = 0;
-      // Writing Effect logic
       const interval = setInterval(() => {
         setTypingText((prev) => prev + cleanAnswer[i]);
         i++;
@@ -88,17 +85,13 @@ export default function Landing() {
           setTypingText("");
           setIsTyping(false);
         }
-      }, 20); 
-    } catch (error) {
-      console.error("Chat Error:", error);
-      setMessages((prev) => [
-        ...prev, 
-        { sender: "bot", text: "I'm having trouble connecting to my brain. Please try again later." }
-      ]);
+      }, 15); 
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [...prev, { sender: "bot", text: "Something went wrong. Please try again." }]);
       setIsTyping(false);
     }
   };
-
   return (
     <>
       <Navbar />

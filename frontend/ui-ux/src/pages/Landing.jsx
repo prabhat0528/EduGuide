@@ -1,181 +1,216 @@
 import { motion, AnimatePresence } from "framer-motion";
-import React, { useEffect, useState, useRef } from "react"; 
+import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import useLenis from "../hooks/Lenis";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/Authcontext";
-import { MessageCircle, X, Send } from "lucide-react"; 
+import { MessageCircle, X } from "lucide-react";
 
 export default function Landing() {
   const navigate = useNavigate();
   useLenis();
-  const { user } = useAuth();
-  
-  // Refs for auto-scrolling
-  const chatEndRef = useRef(null);
+  const { user } = useAuth(); 
 
-  const [quote, setQuote] = useState("Failure will never overtake me...");
+  const [quote, setQuote] = useState(
+    "Failure will never overtake me if my definition to succeed is strong enough"
+  );
+
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Hi! Ask me anything about EduGuide!", isTyping: false }
+    { sender: "bot", text: "Hi  Ask me anything about EduGuide!" }
   ]);
   const [input, setInput] = useState("");
-  const [isBotLoading, setIsBotLoading] = useState(false);
-
-  // Auto-scroll logic
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const fetchQuote = () => {
     fetch("https://eduguide-genai.onrender.com/get-motivation")
       .then((res) => res.json())
-      .then((data) => { if (data.quote) setQuote(data.quote); })
-      .catch(() => setQuote("Stay motivated and keep growing!"));
+      .then((data) => {
+        if (data.quote) setQuote(data.quote);
+      })
+      .catch(() => {
+        setQuote("Stay motivated and keep growing!");
+      });
   };
 
   useEffect(() => {
     fetchQuote();
-    const interval = setInterval(fetchQuote, 300000);
+    const interval = setInterval(fetchQuote, 300000); 
     return () => clearInterval(interval);
   }, []);
 
-  
   const sendMessage = async () => {
-    if (!input.trim() || isBotLoading) return;
+    if (!input.trim()) return;
 
     const userMsg = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMsg]);
-    const currentInput = input;
     setInput("");
-    setIsBotLoading(true);
 
-    try {
-      const response = await fetch("https://eduguide-rag.onrender.com/get-information", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: currentInput }),
-      });
+    const botMsg = {
+      sender: "bot",
+      text: "Great question! EduGuide helps you discover your perfect career path "
+    };
 
-      const data = await response.json();
-      
-      // Cleaning \n and other formatting artifacts
-      const cleanText = data.answer.replace(/\\n/g, ' ').replace(/\n/g, ' ');
-
-      const botMsg = { 
-        sender: "bot", 
-        text: cleanText, 
-        isTyping: true 
-      };
-      
+    setTimeout(() => {
       setMessages((prev) => [...prev, botMsg]);
-    } catch (error) {
-      setMessages((prev) => [...prev, { sender: "bot", text: "Sorry, I'm having trouble connecting." }]);
-    } finally {
-      setIsBotLoading(false);
-    }
+    }, 700);
   };
 
   return (
     <>
       <Navbar />
-      <div className="relative min-h-screen overflow-hidden bg-[#0A0F1F] text-white">
-       
 
-        {/* FLOATING CHATBOT ICON */}
-        {!chatOpen && (
-          <motion.div
-            animate={{ y: [0, -10, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="fixed bottom-6 right-6 z-50 cursor-pointer"
-            onClick={() => setChatOpen(true)}
+      <div className="relative min-h-screen overflow-hidden bg-[#0A0F1F] text-white">
+
+        {/* BACKGROUND ORBS */}
+        <motion.div
+          className="absolute top-[-150px] left-[-100px] w-[450px] h-[450px] bg-blue-500/30 rounded-full blur-[200px]"
+          animate={{ x: [0, 40, 0], y: [0, -40, 0] }}
+          transition={{ repeat: Infinity, duration: 12 }}
+        />
+        <motion.div
+          className="absolute bottom-[-150px] right-[-120px] w-[500px] h-[500px] bg-purple-500/30 rounded-full blur-[200px]"
+          animate={{ x: [0, -40, 0], y: [0, 40, 0] }}
+          transition={{ repeat: Infinity, duration: 12 }}
+        />
+
+        <div className="absolute inset-0 bg-[url('https://i.ibb.co/7S8T3Fc/waves.png')] opacity-20 bg-cover bg-center" />
+
+        {/* HERO */}
+        <section className="relative z-20 flex flex-col items-center text-center px-6 mt-20">
+
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={quote}
+              className="text-blue-300 text-lg italic max-w-2xl mb-6 px-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1 }}
+            >
+              {quote}
+            </motion.p>
+          </AnimatePresence>
+
+          <motion.h1
+            className="text-5xl md:text-7xl font-extrabold leading-tight max-w-4xl"
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
           >
-            <div className="relative">
-              <MessageCircle className="w-14 h-14 text-white bg-blue-600 p-3 rounded-full shadow-xl" />
-              <span className="absolute -top-10 right-0 bg-black text-white text-[10px] px-3 py-1 rounded-md whitespace-nowrap">
-                Ask me about this app
-              </span>
+            Discover Your
+            <span className="bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
+              {" "}Perfect Career Path
+            </span>
+          </motion.h1>
+
+          <motion.p
+            className="text-gray-300 mt-5 text-lg max-w-2xl"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9 }}
+          >
+            EduGuide is your one-stop personalized career & education advisor —
+            helping you find your strengths, choose the right career, explore
+            courses, and get step-by-step growth roadmaps.
+          </motion.p>
+
+          {user ? (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.2 }}
+              onClick={() => navigate("/features")}
+              className="mt-10 px-10 py-4 rounded-full text-lg font-semibold bg-gradient-to-r from-green-400 to-blue-600 shadow-xl hover:scale-105 transition"
+            >
+              Explore our Features →
+            </motion.button>
+          ) : (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.2 }}
+              onClick={() => navigate("/auth")}
+              className="mt-10 px-10 py-4 rounded-full text-lg font-semibold bg-gradient-to-r from-teal-400 to-blue-600 shadow-xl hover:scale-105 transition"
+            >
+              Start Your Journey →
+            </motion.button>
+          )}
+
+        </section>
+
+        {/* FEATURES */}
+        <section className="relative z-20 px-8 md:px-20 mt-32">
+          <h2 className="text-center text-4xl font-bold mb-12">
+            What Makes <span className="text-blue-300">EduGuide</span> Special?
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-10">
+            <Card title="AI-Based Career Guidance" desc="Get personalized career paths based on your skills and interests." />
+            <Card title="Smart Course Recommendations" desc="Curated courses to build skills you need." />
+            <Card title="Step-by-Step Roadmaps" desc="Clear learning paths tailored for your future." />
+          </div>
+        </section>
+
+        <footer className="mt-32 py-10 text-center text-gray-400 border-t border-white/10">
+          © {new Date().getFullYear()} EduGuide — Personalized Career & Education Advisor
+        </footer>
+
+        {/* FLOATING CHATBOT */}
+        <motion.div
+          animate={{ y: [0, -10, 0] }}
+          transition={{ repeat: Infinity, duration: 2 }}
+          className="fixed bottom-6 right-6 z-50 cursor-pointer"
+          onClick={() => setChatOpen(true)}
+        >
+          <div className="relative">
+            <MessageCircle className="w-14 h-14 text-white bg-blue-600 p-3 rounded-full shadow-xl" />
+            <span className="absolute -top-10 right-0 bg-black text-white text-xs px-3 py-1 rounded-md">
+              Ask me about this app
+            </span>
+          </div>
+        </motion.div>
+
+        {chatOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="fixed bottom-24 right-6 w-80 h-96 bg-[#0A0F1F] rounded-2xl shadow-2xl z-50 flex flex-col border border-white/10"
+          >
+            <div className="flex items-center justify-between p-3 border-b border-white/10">
+              <span className="font-semibold text-white">EduGuide Assistant</span>
+              <X className="cursor-pointer" onClick={() => setChatOpen(false)} />
+            </div>
+
+            <div className="flex-1 p-3 overflow-y-auto space-y-2 text-sm">
+              {messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`p-2 rounded-lg max-w-[85%] ${
+                    msg.sender === "user" ? "bg-blue-600 ml-auto" : "bg-white/10"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+
+            <div className="p-2 border-t border-white/10 flex gap-2">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Ask something..."
+                className="flex-1 bg-black/40 px-3 py-2 rounded-lg text-sm outline-none"
+              />
+              <button onClick={sendMessage} className="bg-blue-600 px-4 py-2 rounded-lg text-sm">
+                Send
+              </button>
             </div>
           </motion.div>
         )}
-
-        {/* CHAT WINDOW */}
-        <AnimatePresence>
-          {chatOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              className="fixed bottom-6 right-6 w-80 md:w-96 h-[500px] bg-[#0D1425] rounded-2xl shadow-2xl z-50 flex flex-col border border-white/10"
-            >
-              <div className="flex items-center justify-between p-4 border-b border-white/10 bg-blue-600 rounded-t-2xl">
-                <span className="font-bold text-white">EduGuide AI Assistant</span>
-                <X className="cursor-pointer hover:rotate-90 transition-transform" onClick={() => setChatOpen(false)} />
-              </div>
-
-              <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar">
-                {messages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`p-3 rounded-2xl max-w-[85%] text-sm leading-relaxed ${
-                      msg.sender === "user" ? "bg-blue-600 text-white rounded-tr-none" : "bg-white/10 text-gray-200 rounded-tl-none"
-                    }`}>
-                      {msg.isTyping ? (
-                        <Typewriter text={msg.text} />
-                      ) : (
-                        msg.text
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {isBotLoading && (
-                    <div className="bg-white/10 text-gray-400 p-3 rounded-2xl w-12 text-center animate-pulse">...</div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-
-              <div className="p-4 border-t border-white/10 flex gap-2 bg-[#0A0F1F] rounded-b-2xl">
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                  placeholder="Ask something..."
-                  className="flex-1 bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-sm outline-none focus:border-blue-500 transition-colors"
-                />
-                <button 
-                  onClick={sendMessage} 
-                  disabled={isBotLoading}
-                  className="bg-blue-600 p-2 rounded-xl hover:bg-blue-500 disabled:opacity-50 transition-colors"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </>
   );
-}
-
-// Writing Effect Component
-function Typewriter({ text, speed = 20 }) {
-  const [displayedText, setDisplayedText] = useState("");
-  
-  useEffect(() => {
-    let i = 0;
-    const timer = setInterval(() => {
-      setDisplayedText((prev) => prev + text.charAt(i));
-      i++;
-      if (i >= text.length) clearInterval(timer);
-    }, speed);
-    return () => clearInterval(timer);
-  }, [text, speed]);
-
-  return <span>{displayedText}</span>;
 }
 
 function Card({ title, desc }) {

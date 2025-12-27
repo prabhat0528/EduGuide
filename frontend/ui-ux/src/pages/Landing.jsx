@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Navbar from "./Navbar";
 import useLenis from "../hooks/Lenis";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,7 @@ import { MessageCircle, X } from "lucide-react";
 export default function Landing() {
   const navigate = useNavigate();
   useLenis();
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   const [quote, setQuote] = useState(
     "Failure will never overtake me if my definition to succeed is strong enough"
@@ -20,6 +20,11 @@ export default function Landing() {
     { sender: "bot", text: "Hi  Ask me anything about EduGuide!" }
   ]);
   const [input, setInput] = useState("");
+
+  //  Chatbot upgrades
+  const [typingText, setTypingText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef(null);
 
   const fetchQuote = () => {
     fetch("https://eduguide-genai.onrender.com/get-motivation")
@@ -34,25 +39,51 @@ export default function Landing() {
 
   useEffect(() => {
     fetchQuote();
-    const interval = setInterval(fetchQuote, 300000); 
+    const interval = setInterval(fetchQuote, 300000);
     return () => clearInterval(interval);
   }, []);
 
+  //  Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, typingText]);
+
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
 
     const userMsg = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
-    const botMsg = {
-      sender: "bot",
-      text: "Great question! EduGuide helps you discover your perfect career path "
-    };
+    setIsTyping(true);
+    setTypingText("");
 
-    setTimeout(() => {
-      setMessages((prev) => [...prev, botMsg]);
-    }, 700);
+    try {
+      const res = await fetch("https://eduguide-rag.onrender.com/get-information", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: userMsg.text }),
+      });
+
+      const data = await res.json();
+      const answer = data.answer || "I couldn't find that information.";
+
+      let i = 0;
+      const interval = setInterval(() => {
+        setTypingText((prev) => prev + answer[i]);
+        i++;
+
+        if (i >= answer.length) {
+          clearInterval(interval);
+          setMessages((prev) => [...prev, { sender: "bot", text: answer }]);
+          setTypingText("");
+          setIsTyping(false);
+        }
+      }, 25);
+    } catch {
+      setMessages((prev) => [...prev, { sender: "bot", text: "Something went wrong. Try again." }]);
+      setIsTyping(false);
+    }
   };
 
   return (
@@ -135,7 +166,6 @@ export default function Landing() {
               Start Your Journey →
             </motion.button>
           )}
-
         </section>
 
         {/* FEATURES */}
@@ -162,12 +192,7 @@ export default function Landing() {
           className="fixed bottom-6 right-6 z-50 cursor-pointer"
           onClick={() => setChatOpen(true)}
         >
-          <div className="relative">
-            <MessageCircle className="w-14 h-14 text-white bg-blue-600 p-3 rounded-full shadow-xl" />
-            <span className="absolute -top-10 right-0 bg-black text-white text-xs px-3 py-1 rounded-md">
-              Ask me about this app
-            </span>
-          </div>
+          <MessageCircle className="w-14 h-14 text-white bg-blue-600 p-3 rounded-full shadow-xl" />
         </motion.div>
 
         {chatOpen && (
@@ -192,6 +217,15 @@ export default function Landing() {
                   {msg.text}
                 </div>
               ))}
+
+              {isTyping && (
+                <div className="p-2 rounded-lg max-w-[85%] bg-white/10">
+                  {typingText}
+                  <span className="animate-pulse">▍</span>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
             </div>
 
             <div className="p-2 border-t border-white/10 flex gap-2">

@@ -48,11 +48,12 @@ export default function Landing() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typingText]);
 
-  const sendMessage = async () => {
+ const sendMessage = async () => {
     if (!input.trim() || isTyping) return;
 
     const userMsg = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMsg]);
+    const currentInput = input; 
     setInput("");
 
     setIsTyping(true);
@@ -62,26 +63,38 @@ export default function Landing() {
       const res = await fetch("https://eduguide-rag.onrender.com/get-information", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userMsg.text }),
+        body: JSON.stringify({ question: currentInput }), 
       });
 
+      if (!res.ok) throw new Error("Server Error");
+
       const data = await res.json();
-      const answer = data.answer || "I couldn't find that information.";
+      
+      
+      const cleanAnswer = data.answer
+        .replace(/\\n/g, " ") 
+        .replace(/\n/g, " ")   
+        .trim();
 
       let i = 0;
+      // Writing Effect logic
       const interval = setInterval(() => {
-        setTypingText((prev) => prev + answer[i]);
+        setTypingText((prev) => prev + cleanAnswer[i]);
         i++;
 
-        if (i >= answer.length) {
+        if (i >= cleanAnswer.length) {
           clearInterval(interval);
-          setMessages((prev) => [...prev, { sender: "bot", text: answer }]);
+          setMessages((prev) => [...prev, { sender: "bot", text: cleanAnswer }]);
           setTypingText("");
           setIsTyping(false);
         }
-      }, 25);
-    } catch {
-      setMessages((prev) => [...prev, { sender: "bot", text: "Something went wrong. Try again." }]);
+      }, 20); 
+    } catch (error) {
+      console.error("Chat Error:", error);
+      setMessages((prev) => [
+        ...prev, 
+        { sender: "bot", text: "I'm having trouble connecting to my brain. Please try again later." }
+      ]);
       setIsTyping(false);
     }
   };

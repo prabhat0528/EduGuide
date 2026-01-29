@@ -1,75 +1,76 @@
 from flask import Flask, request, jsonify
-import pandas as pd
-import numpy as np
 from flask_cors import CORS
-import nltk
-from nltk.stem.porter import PorterStemmer
-from sklearn.feature_extraction.text import CountVectorizer
+import joblib
+import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from nltk.stem.porter import PorterStemmer
+import os
 
-# Initialize Flask
 app = Flask(__name__)
 CORS(app)
 
-nltk.download('punkt')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, "models")
+
+# Load pre-trained artifacts (VERY FAST)
+cv = joblib.load(os.path.join(MODEL_DIR, "count_vectorizer.pkl"))
+cv_matrix = joblib.load(os.path.join(MODEL_DIR, "cv_matrix.pkl"))
+course_df = joblib.load(os.path.join(MODEL_DIR, "course_df.pkl"))
 
 stemmer = PorterStemmer()
 
-course_df = pd.read_csv('Coursera.csv')
-course_df['tags'] = course_df['Course Description'] + " " + course_df['Skills']
-course_df = course_df[['Course Name', 'University', 'Difficulty Level', 'Course Rating', 'Course URL', 'tags']]
-
 def tag_stemmer(text):
-    return " ".join([stemmer.stem(word) for word in text.split()]).lower()
+    text = str(text).lower()
+    return " ".join(stemmer.stem(word) for word in text.split())
 
-course_df['tags'] = course_df['tags'].apply(tag_stemmer)
-
-cv = CountVectorizer(max_features=4000, stop_words='english')
-cv_matrix = cv.fit_transform(course_df['tags'])
-
-# Recommendation logic
-def recommend_courses(search_query, difficulty_level):
-    if not isinstance(search_query, str) or not isinstance(difficulty_level, str):
-        raise ValueError("Invalid input types.")
-
+def recommend_courses(search_query, difficulty, top_k=10):
     processed_query = tag_stemmer(search_query)
     query_vector = cv.transform([processed_query])
 
-    similarity_scores = cosine_similarity(query_vector, cv_matrix)
-    sorted_indices = np.argsort(similarity_scores[0])[::-1]
+    # FILTER FIRST (huge speed gain)
+    filtered_idx = course_df[
+        course_df['Difficulty Level'].str.lower() == difficulty.lower()
+    ].index
+
+    if len(filtered_idx) == 0:
+        return []
+
+    similarity_scores = cosine_similarity(
+        query_vector,
+        cv_matrix[filtered_idx]
+    )[0]
+
+    top_indices = filtered_idx[np.argsort(similarity_scores)[::-1][:top_k]]
 
     recommendations = []
-    for idx in sorted_indices:
-        course = course_df.iloc[idx]
-        if course['Difficulty Level'].strip().lower() == difficulty_level.strip().lower():
-            recommendations.append({
-                'Course Name': course['Course Name'],
-                'University': course['University'],
-                'Rating': course['Course Rating'],
-                'URL': course['Course URL']
-            })
-        if len(recommendations) >= 10:
-            break
+    for idx in top_indices:
+        course = course_df.loc[idx]
+        recommendations.append({
+            "Course Name": course["Course Name"],
+            "University": course["University"],
+            "Rating": course["Course Rating"],
+            "URL": course["Course URL"]
+        })
 
     return recommendations
 
-# Route to handle recommendations
-@app.route('/recommend', methods=['POST'])
+@app.route("/recommend", methods=["POST"])
 def recommend():
     try:
         data = request.get_json(force=True)
-        topic = data.get('topic', '').strip()
-        difficulty = data.get('difficulty', '').strip()
+        topic = data.get("topic", "").strip()
+        difficulty = data.get("difficulty", "").strip()
 
         if not topic or not difficulty:
-            return jsonify({'error': 'Missing topic or difficulty'}), 400
+            return jsonify({"error": "Missing topic or difficulty"}), 400
 
-        recommendations = recommend_courses(topic, difficulty)
-        return jsonify(recommendations if recommendations else [])
+        result = recommend_courses(topic, difficulty)
+        return jsonify(result)
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
-
-if __name__ == '__main__':
-    app.run(port = 3000,host= '0.0.0.0',debug=True)
+# Render requires this
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 3000))
+    app.run(host="0.0.0.0", port=port)

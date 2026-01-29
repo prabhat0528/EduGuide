@@ -36,7 +36,7 @@ embeddings = GoogleGenerativeAIEmbeddings(
 vector_store = FAISS.load_local(
     INDEX_DIR,
     embeddings,
-    allow_dangerous_deserialization=True
+   
 )
 
 # ==========================

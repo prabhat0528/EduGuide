@@ -3,9 +3,10 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+from langchain_google_genai import (
+    GoogleGenerativeAIEmbeddings,
+    ChatGoogleGenerativeAI
+)
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 
@@ -16,42 +17,30 @@ app = Flask(__name__)
 CORS(app)
 
 # ==========================
-# Load Environment Variables
+# Env
 # ==========================
 load_dotenv()
 GEMINI_KEY = os.getenv("GEMINI_KEY")
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+INDEX_DIR = os.path.join(BASE_DIR, "faiss_index_edu")
+
 # ==========================
-# Initialize Embeddings
+# Load Vector Store (FAST)
 # ==========================
 embeddings = GoogleGenerativeAIEmbeddings(
     model="models/gemini-embedding-001",
     google_api_key=GEMINI_KEY
 )
 
-# ==========================
-# Build Vector Store
-# ==========================
-def create_vector_store():
-    print("Building vector database...")
-
-    file_path = "./EduGuideDocs.pdf"
-    if not os.path.exists(file_path):
-        raise FileNotFoundError("EduGuideDocs.pdf not found")
-
-    loader = PyPDFLoader(file_path)
-    docs = loader.load()
-
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    chunks = splitter.split_documents(docs)
-
-    vector_store = FAISS.from_documents(chunks, embeddings)
-    return vector_store
-
-vector_store = create_vector_store()
+vector_store = FAISS.load_local(
+    INDEX_DIR,
+    embeddings,
+    allow_dangerous_deserialization=True
+)
 
 # ==========================
-# Initialize LLM & QA Chain
+# LLM + QA Chain
 # ==========================
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
@@ -83,7 +72,7 @@ def get_information():
     })
 
 # ==========================
-# Run Server 
+# Run (Render-compatible)
 # ==========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))

@@ -7,3 +7,5 @@ scikit-learn
 python-dotenv
 langchain
 langchain-google-genai
+joblib
+gunicorn

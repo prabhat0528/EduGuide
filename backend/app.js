@@ -6,17 +6,19 @@ const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const MongoStore = require("connect-mongo").default;
 const session = require("express-session");
+const cors = require("cors");
 
+/* --------------------- ROUTES --------------------- */
 const auth_routes = require("./routes/auth_routes");
 const mentor_routes = require("./routes/mentor_routes");
 const review_route = require("./routes/review_route");
+const chat_routes = require("./routes/chatRoutes");
 
+/* --------------------- MODELS  --------------------- */
 const Conversation = require("./models/conversation_schema");
 const Message = require("./models/message_schema");
-const User = require("./models/user_model");
 
-const cors = require("cors");
-
+/* --------------------- APP INIT --------------------- */
 const app = express();
 app.set("trust proxy", 1);
 
@@ -29,7 +31,6 @@ app.use(
 );
 
 /* --------------------- MIDDLEWARE --------------------- */
-
 app.use(express.json());
 app.use(cookieParser());
 
@@ -46,7 +47,7 @@ app.use(
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      secure: true, 
+      secure: true,
       sameSite: "none",
     },
   })
@@ -56,6 +57,7 @@ app.use(
 app.use("/api/auth", auth_routes);
 app.use("/api/mentors", mentor_routes);
 app.use("/reviews", review_route);
+app.use("/api/chat", chat_routes);  
 
 /* --------------------- DATABASE --------------------- */
 mongoose
@@ -66,86 +68,6 @@ mongoose
 /* --------------------- ROOT --------------------- */
 app.get("/", (req, res) => {
   res.send("Server running...");
-});
-
-/* ------------------------------------------------------
-       CREATE or RETURN EXISTING CONVERSATION
------------------------------------------------------- */
-app.post("/api/conversation", async (req, res) => {
-  const { senderId, receiverId } = req.body;
-
-  try {
-    let conversation = await Conversation.findOne({
-      participants: { $all: [senderId, receiverId] },
-    });
-
-    if (!conversation) {
-      conversation = await Conversation.create({
-        participants: [senderId, receiverId],
-      });
-    }
-
-    return res.json(conversation);
-  } catch (err) {
-    console.error("Conversation Error:", err);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
-
-/* ------------------------------------------------------
-       ADD conversation to BOTH USER PROFILES
------------------------------------------------------- */
-app.post("/api/chat/addToUsers", async (req, res) => {
-  const { conversationId, userId, mentorId } = req.body;
-
-  try {
-    await User.findByIdAndUpdate(userId, {
-      $addToSet: { mychats: conversationId },
-    });
-
-    await User.findByIdAndUpdate(mentorId, {
-      $addToSet: { mychats: conversationId },
-    });
-
-    return res.json({ message: "Conversation added to users" });
-  } catch (err) {
-    console.error("AddToUsers Error:", err);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
-
-/* ------------------------------------------------------
-       GET ALL CHATS FOR A USER
------------------------------------------------------- */
-app.get("/api/chat/mychats/:userId", async (req, res) => {
-  try {
-    const chats = await Conversation.find({
-      participants: req.params.userId,
-    })
-      .populate("participants", "name profile_picture role")
-      .populate("lastMessage");
-
-    res.json(chats);
-  } catch (err) {
-    console.error("Fetch Chats Error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-/* ------------------------------------------------------
-       GET MESSAGES FOR A CONVERSATION
------------------------------------------------------- */
-app.get("/api/chat/messages/:conversationId", async (req, res) => {
-  try {
-    const messages = await Message.find({
-      conversationId: req.params.conversationId,
-    }).sort({ createdAt: 1 });
-
-    res.json(messages);
-  } catch (err) {
-    console.error("Message Fetch Error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
 });
 
 /* --------------------- SOCKET.IO --------------------- */
@@ -162,11 +84,13 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
 
+  /* JOIN ROOM */
   socket.on("join chat", (conversationId) => {
     socket.join(conversationId);
     console.log(`User joined room: ${conversationId}`);
   });
 
+  /* SEND MESSAGE */
   socket.on("new message", async (payload) => {
     try {
       const { conversationId, senderId, message } = payload;
@@ -181,17 +105,18 @@ io.on("connection", (socket) => {
         lastMessage: newMessage._id,
       });
 
-      const populated = await Message.findById(newMessage._id).populate(
+      const populatedMessage = await Message.findById(newMessage._id).populate(
         "sender",
         "name profile_picture"
       );
 
-      io.to(conversationId).emit("message received", populated);
+      io.to(conversationId).emit("message received", populatedMessage);
     } catch (err) {
       console.error("Socket Send Message Error:", err);
     }
   });
 
+  /* DISCONNECT */
   socket.on("disconnect", () => {
     console.log("Socket disconnected:", socket.id);
   });
